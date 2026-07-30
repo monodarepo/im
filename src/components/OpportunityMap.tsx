@@ -140,9 +140,13 @@ export function OpportunityMap() {
                   y={tile.cy}
                   textAnchor="middle"
                   dominantBaseline="central"
-                  fontSize={32}
+                  fontSize={tile.small ? 17 : 26}
                   fontWeight={600}
-                  fill={level >= 4 ? '#FFFFFF' : '#334155'}
+                  fill="#334155"
+                  stroke="#FFFFFF"
+                  strokeWidth={4}
+                  strokeLinejoin="round"
+                  paintOrder="stroke"
                   pointerEvents="none"
                 >
                   {tile.code}
