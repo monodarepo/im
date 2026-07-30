@@ -555,6 +555,30 @@ describe('roteamento e identidade de cor', () => {
     }
   })
 
+  it('mapeia os onze módulos do GTM, numerados de 2.1 a 2.11', () => {
+    const gtm = ROUTES.filter((route) => route.product === 'gtm')
+    expect(gtm).toHaveLength(11)
+
+    expect(gtm.map((route) => route.badge)).toEqual([
+      'GTM 2.1',
+      'GTM 2.2',
+      'GTM 2.3',
+      'GTM 2.4',
+      'GTM 2.5',
+      'GTM 2.6',
+      'GTM 2.7',
+      'GTM 2.8',
+      'GTM 2.9',
+      'GTM 2.10',
+      'GTM 2.11',
+    ])
+
+    for (const route of gtm) {
+      expect(route.path.startsWith('/gtm')).toBe(true)
+      expect(resolveTheme(route.navPath ?? route.path)).toBe('gtm')
+    }
+  })
+
   it('dá a toda rota com parâmetro um destino navegável', () => {
     for (const route of ROUTES) {
       if (route.path.includes(':')) {
