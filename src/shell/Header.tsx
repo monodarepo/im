@@ -1,9 +1,12 @@
 import { Link, useLocation } from 'react-router-dom'
+import { ICON_SIZE, ICON_STROKE, iconUi } from '../design/icons'
+import { DENSITY_LABEL, useDensity } from '../state/densityStore'
 import { CURRENT_PERSONA } from '../domain/persona'
 import { formatInteger } from '../domain/format'
 import { SEMANTIC } from '../design/tokens'
 import { countBySeverity } from '../mock/notifications'
 import { resolveRoute } from '../routes/registry'
+import { PRODUCTS } from '../design/tokens'
 import { activeFilters, FILTER_LABEL, useFilters } from '../state/filtersStore'
 import { useCopilot } from '../state/copilotStore'
 
@@ -16,9 +19,49 @@ export function Header() {
   const openCopilot = useCopilot((state) => state.open)
   const pills = activeFilters(filters, declared)
   const criticalAlerts = countBySeverity('critical')
+  const density = useDensity((store) => store.density)
+  const toggleDensity = useDensity((store) => store.toggle)
+  const Bell = iconUi.bell
+  const Help = iconUi.help
+
+  const Chevron = iconUi.chevronRight
+  const product = route?.product ? PRODUCTS[route.product] : null
+  const isHome = pathname === '/'
 
   return (
-    <header className="flex flex-wrap items-center gap-3 border-b border-surface-border bg-surface-card px-6 py-3">
+    <header className="border-b border-surface-border bg-surface-card px-6 py-2.5">
+      <nav aria-label="Navegação estrutural" className="mb-2 flex items-center gap-1 text-label">
+        {isHome ? (
+          <span className="font-medium text-slate-900">Torre Integrada</span>
+        ) : (
+          <Link to="/" className="font-medium text-slate-500 hover:text-slate-900 hover:underline">
+            Torre Integrada
+          </Link>
+        )}
+        {product ? (
+          <>
+            <Chevron size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} aria-hidden className="text-slate-400" />
+            {route && route.path !== `/${product.id}` ? (
+              <Link
+                to={`/${product.id}`}
+                className="font-medium text-slate-500 hover:text-slate-900 hover:underline"
+              >
+                {product.shortName}
+              </Link>
+            ) : (
+              <span className="font-medium text-slate-900">{product.shortName}</span>
+            )}
+          </>
+        ) : null}
+        {route && !isHome && route.path !== `/${product?.id ?? ''}` ? (
+          <>
+            <Chevron size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} aria-hidden className="text-slate-400" />
+            <span className="font-medium text-slate-900">{route.title}</span>
+          </>
+        ) : null}
+      </nav>
+
+      <div className="flex flex-wrap items-center gap-3">
       <span
         className="rounded-control px-3 py-1.5 text-delta-lg font-medium text-white"
         style={{ backgroundColor: 'var(--product-accent)' }}
@@ -60,7 +103,7 @@ export function Header() {
           title="Central de Notificações"
           className="relative flex h-8 w-8 items-center justify-center rounded-control border border-surface-border bg-surface-card text-slate-600 hover:bg-slate-50"
         >
-          <span aria-hidden>🔔</span>
+          <Bell size={ICON_SIZE.md} strokeWidth={ICON_STROKE} aria-hidden />
           {criticalAlerts > 0 ? (
             <span
               aria-hidden
@@ -74,12 +117,21 @@ export function Header() {
 
         <button
           type="button"
+          onClick={toggleDensity}
+          title={`Densidade da tabela: ${DENSITY_LABEL[density]}`}
+          className="rounded-control border border-surface-border px-2.5 py-1.5 text-label font-medium text-slate-600 hover:bg-slate-50"
+        >
+          {DENSITY_LABEL[density]}
+        </button>
+
+        <button
+          type="button"
           disabled
           aria-label="Ajuda — Fase 2"
           title="Ajuda — Fase 2"
           className="flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-control border border-surface-border bg-surface-card text-slate-300"
         >
-          <span aria-hidden>?</span>
+          <Help size={ICON_SIZE.md} strokeWidth={ICON_STROKE} aria-hidden />
         </button>
 
         <span
@@ -89,6 +141,7 @@ export function Header() {
         >
           {CURRENT_PERSONA.initials}
         </span>
+      </div>
       </div>
     </header>
   )

@@ -1,5 +1,6 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { HyperaLogo } from '../components/HyperaLogo'
+import { ICON_SIZE, ICON_STROKE, iconUi } from '../design/icons'
 import { PRODUCTS } from '../design/tokens'
 import { CURRENT_PERSONA } from '../domain/persona'
 import {
@@ -25,6 +26,8 @@ function ModuleLink({ to, title, badge }: { to: string; title: string; badge: st
   )
 }
 
+const BackIcon = iconUi.arrowLeft
+
 export function Sidebar() {
   const { pathname } = useLocation()
   const theme = resolveTheme(pathname)
@@ -35,7 +38,9 @@ export function Sidebar() {
   return (
     <aside className="flex w-sidebar shrink-0 flex-col bg-slate-900 text-slate-100">
       <div className="px-4 pb-4 pt-5">
-        <HyperaLogo on="dark" />
+        <Link to="/" title="Voltar à Torre Integrada" className="inline-block">
+          <HyperaLogo on="dark" />
+        </Link>
         <p className="mt-2 text-delta-lg text-slate-400">
           {product ? product.name : 'Plataforma de Inteligência de Mercado e Crescimento'}
         </p>
@@ -46,6 +51,15 @@ export function Sidebar() {
       </div>
 
       <nav aria-label="Módulos" className="flex-1 space-y-0.5 overflow-y-auto px-2">
+        {product ? (
+          <NavLink
+            to="/"
+            className="mb-2 flex items-center gap-2 rounded-control border-b border-slate-800 px-3 pb-2.5 pt-2 text-body font-medium text-slate-400 transition-colors hover:text-white"
+          >
+            <BackIcon size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} aria-hidden />
+            Torre Integrada
+          </NavLink>
+        ) : null}
         {modules.map((route) => (
           <ModuleLink
             key={route.path}

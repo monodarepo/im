@@ -5,6 +5,7 @@ import { DecisionCentral } from './screens/DecisionCentral'
 import { ExecutiveCopilot } from './screens/ExecutiveCopilot'
 import { IntegratedTower } from './screens/IntegratedTower'
 import { NotificationCenter } from './screens/NotificationCenter'
+import { StyleGuide } from './screens/StyleGuide'
 import { DecisionDetail } from './screens/DecisionDetail'
 import { AgOverview } from './screens/ag/AgOverview'
 import { FieldExecution as AgFieldExecution } from './screens/ag/FieldExecution'
@@ -114,6 +115,7 @@ export function App() {
           />
         ))}
         <Route path="/decisoes/:decisionId" element={<DecisionDetail />} />
+        <Route path="/estilo" element={<StyleGuide />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

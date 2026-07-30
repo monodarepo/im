@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ICON_SIZE, ICON_STROKE, iconUi } from '../design/icons'
 import { Link } from 'react-router-dom'
 import { DataBadge } from '../components/DataBadge'
 import { ImpactFunnel } from '../components/ImpactFunnel'
@@ -24,6 +25,9 @@ import {
   type FunnelViewId,
   type TowerKpi,
 } from '../mock/tower'
+
+const ChevronUpIcon = iconUi.chevronUp
+const ChevronDownIcon = iconUi.chevronDown
 
 /**
  * Torre Integrada (seção 2, S1).
@@ -65,9 +69,14 @@ export function IntegratedTower() {
             type="button"
             onClick={() => setShowSecondary((value) => !value)}
             aria-expanded={showSecondary}
-            className="rounded-control border border-surface-border px-3 py-1.5 text-delta font-medium text-slate-600 transition-colors hover:bg-slate-50"
+            className="inline-flex items-center gap-1.5 rounded-control border border-surface-border px-3 py-1.5 text-delta font-medium text-slate-600 transition-colors hover:bg-slate-50"
           >
-            {showSecondary ? '▲ Recolher' : '▼ Abrir'} a linha secundária ·{' '}
+            {showSecondary ? (
+              <ChevronUpIcon size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} aria-hidden />
+            ) : (
+              <ChevronDownIcon size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} aria-hidden />
+            )}
+            {showSecondary ? 'Recolher' : 'Abrir'} a linha secundária ·{' '}
             {formatInteger(TOWER_SECONDARY_KPIS.length)} indicadores de apoio
           </button>
         </div>

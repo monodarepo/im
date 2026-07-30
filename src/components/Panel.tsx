@@ -16,18 +16,18 @@ type PanelProps = {
 export function Panel({ title, description, action, footer, children }: PanelProps) {
   return (
     <section className="flex h-full flex-col rounded-card border border-surface-border bg-surface-card">
-      <header className="flex items-start justify-between gap-4 px-5 pt-4">
+      <header className="flex items-start justify-between gap-4 px-4 pt-4">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
-          {description ? <p className="mt-0.5 text-delta-lg text-neutral">{description}</p> : null}
+          <h2 className="text-section text-slate-900">{title}</h2>
+          {description ? <p className="mt-0.5 text-body text-neutral">{description}</p> : null}
         </div>
         {action ? <div className="shrink-0">{action}</div> : null}
       </header>
 
-      {children ? <div className="flex-1 px-5 py-4">{children}</div> : <div className="pb-4" />}
+      {children ? <div className="flex-1 px-4 py-4">{children}</div> : <div className="pb-4" />}
 
       {footer ? (
-        <footer className="border-t border-surface-border px-5 py-3 text-delta text-neutral">
+        <footer className="border-t border-surface-border px-4 py-3 text-label text-neutral">
           {footer}
         </footer>
       ) : null}

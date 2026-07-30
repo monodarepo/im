@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { CopilotAnswer, ExplainabilityFooter, QuestionChips } from '../components/CopilotAnswer'
 import { SUGGESTED_QUESTIONS } from '../mock/copilotAnswer'
 import { useCopilot } from '../state/copilotStore'
+import { ICON_SIZE, ICON_STROKE, iconUi } from '../design/icons'
 
 /**
  * Copiloto em drawer.
@@ -12,6 +13,8 @@ import { useCopilot } from '../state/copilotStore'
  * fase: prometer escrita livre que não existe seria a única coisa pior que não
  * ter copiloto nenhum.
  */
+const CloseIcon = iconUi.close
+
 export function CopilotDrawer() {
   const { isOpen, close } = useCopilot()
   const [askedId, setAskedId] = useState<string | null>('canonical')
@@ -60,7 +63,7 @@ export function CopilotDrawer() {
               aria-label="Fechar copiloto"
               className="flex h-8 w-8 items-center justify-center rounded-control text-neutral hover:bg-slate-50"
             >
-              <span aria-hidden>✕</span>
+              <CloseIcon size={ICON_SIZE.md} strokeWidth={ICON_STROKE} aria-hidden />
             </button>
           </div>
         </header>

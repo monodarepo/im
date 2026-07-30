@@ -111,14 +111,14 @@ export const SURFACE = {
   border: '#E2E8F0',
 } as const
 
-/** Raio: cartão no topo da faixa, controle na base. */
+/** Raio: 8px em painel, 6px em controle. Nada acima disso (padrão visual). */
 export const RADIUS = {
-  card: '16px',
-  control: '12px',
+  card: '8px',
+  control: '6px',
 } as const
 
 export const LAYOUT = {
-  sidebarWidth: '256px',
+  sidebarWidth: '248px',
 } as const
 
 /**

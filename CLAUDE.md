@@ -62,3 +62,38 @@ Autonomia alta: decidir e executar, sem pedir aprovação a cada passo. Reportar
 o que foi feito, o que foi decidido por conta própria e o que ficou pendente.
 Não escrever comentários explicando o óbvio. Componentes pequenos e nomeados pelo domínio
 (`OpportunityQueue`, não `List2`).
+
+## Padrão visual — o software não pode parecer gerado por IA
+
+Referência de registro: instrumento corporativo denso e calmo (Bloomberg, Palantir Foundry,
+Stripe, SAP Fiori). Não é landing page, não é dashboard de portfólio.
+
+### Proibido
+- Emoji como ícone. Ícone de brilho/sparkle para marcar IA. Mais de uma biblioteca de ícones.
+- Gradiente em card, header, botão ou fundo. Sombra pesada. `rounded-2xl` ou maior.
+- Card para conteúdo que é tabela. Grade uniforme onde tudo tem o mesmo peso visual.
+- Número sem `tabular-nums`. Número redondo inventado (1.000, 50%, 4,0x).
+- Texto centralizado fora de estado vazio e modal.
+- Recharts com estilo de fábrica: grade completa, legenda em caixa, ponto em cada vértice.
+- Palavras: "Insights", "Analytics", "Overview", "Powered by AI", "Dashboard" como título.
+- Exclamação em mensagem de sistema.
+
+### Obrigatório
+- Ícones: Lucide, exclusivamente. Stroke 1.5. Tamanhos 14 / 16 / 20 apenas. Ícone sempre
+  ao lado de rótulo em texto, nunca sozinho como único significante de uma ação.
+- Numerais: `font-variant-numeric: tabular-nums` em todo número. Alinhamento à direita em
+  coluna numérica. Milhar com ponto, decimal com vírgula, menos tipográfico (−).
+- Separação por borda hairline (1px) antes de sombra. Elevação só em overlay real
+  (dropdown, drawer, modal).
+- Raio: 6px em controle, 8px em painel. Nada acima disso.
+- Micro-rótulo: 11px, caixa alta, tracking 0.06em, cor neutra — sobre todo KPI e toda coluna.
+- Todo componente que carrega dado implementa quatro estados: carregando (skeleton),
+  vazio (com ação), erro (com causa e saída), degradado (banner âmbar, tela operável).
+- `:focus-visible` com anel de 2px visível em todo elemento interativo.
+- Transições de 120–160ms, `ease-out`. `prefers-reduced-motion` respeitado.
+- Texto de interface: voz ativa, frase em caixa baixa, sem enfeite. O botão diz o que
+  acontece ("Enviar para aprovação", não "Confirmar"). O nome da ação não muda ao longo do fluxo.
+- Marcador de recomendação de IA: chip pequeno com o rótulo "IA" em cor neutra
+  (componente `AiChip`). Nunca ícone de brilho.
+- Tipografia: Geist Sans (interface) + Geist Mono (numerais e códigos), carregadas
+  localmente via @fontsource. A escala nomeada vive em `src/design/type.ts`.

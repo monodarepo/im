@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss'
+import { FONT_MONO, FONT_SANS } from './src/design/type'
 import {
   LAYOUT,
   OPPORTUNITY_LEVELS,
@@ -43,6 +44,16 @@ export default {
         sidebar: LAYOUT.sidebarWidth,
       },
       fontSize: {
+        /* Papéis novos da escala PD1 (src/design/type.ts). */
+        micro: ['11px', { lineHeight: '1.2', fontWeight: '600', letterSpacing: '0.06em' }],
+        label: ['12px', { lineHeight: '1.3' }],
+        body: ['13px', { lineHeight: '1.45' }],
+        'body-lg': ['14px', { lineHeight: '1.5' }],
+        metric: ['28px', { lineHeight: '1.1', fontWeight: '600', letterSpacing: '-0.02em' }],
+        'metric-lg': ['32px', { lineHeight: '1.1', fontWeight: '600', letterSpacing: '-0.02em' }],
+        section: ['15px', { lineHeight: '1.3', fontWeight: '600' }],
+        screen: ['18px', { lineHeight: '1.25', fontWeight: '600', letterSpacing: '-0.01em' }],
+        /* Aliases legados das telas P2–P12, mapeados para a mesma escala. */
         kpi: [TYPOGRAPHY.kpi, { lineHeight: '1.1', fontWeight: '600', letterSpacing: '-0.02em' }],
         'kpi-lg': [
           TYPOGRAPHY.kpiLarge,
@@ -52,7 +63,8 @@ export default {
         'delta-lg': [TYPOGRAPHY.deltaLarge, { lineHeight: '1.3' }],
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: FONT_SANS.split(',').map((f) => f.trim().replace(/^'|'$/g, '')),
+        mono: FONT_MONO.split(',').map((f) => f.trim().replace(/^'|'$/g, '')),
       },
     },
   },

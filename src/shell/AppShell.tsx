@@ -35,8 +35,10 @@ export function AppShell() {
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header />
-        <main className="flex-1 px-6 py-6">
-          <Outlet />
+        <main className="flex-1 px-4 py-4">
+          <div className="mx-auto max-w-[1440px]">
+            <Outlet />
+          </div>
         </main>
       </div>
       <CopilotDrawer />
