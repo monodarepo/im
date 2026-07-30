@@ -225,7 +225,70 @@ import {
   REGION_TOTAL,
   SPECIALTY_DISTRIBUTION,
   STOCKOUT_BLOCK,
+  BLOCKED_SAMPLES,
 } from './sampleAllocation'
+import {
+  AT_RISK_LOTS,
+  BLOCKED_LOT,
+  lotStatus,
+  STOCKOUT_SOURCE_ROUTE,
+  TOTAL_UNITS,
+  TOTAL_UNITS_AT_RISK,
+  UNIT_COST_BRL,
+  type Lot,
+} from './agInventory'
+import { BALANCE_BY_HOLDER_KIND, BALANCE_BY_REGION } from './inventoryFlows'
+import {
+  BLOCKED_LOT_SUGGESTION,
+  isWithinUserAuthority,
+  RECOVERABLE_UNITS,
+  RECOVERABLE_VALUE_BRL,
+  SUGGESTIONS_ABOVE_USER_AUTHORITY,
+  TOP_SUGGESTION,
+  TRANSFER_SUGGESTIONS,
+  type TransferSuggestion,
+} from './redistribution'
+import {
+  FORECAST_TOTAL_SAMPLES,
+  SPECIALTY_DEMAND,
+  SPECIALTY_DEMAND_TOTAL,
+  TERRITORY_DEMAND,
+  TERRITORY_DEMAND_TOTAL,
+} from './campaignPlanning'
+import {
+  BLOCKED_DOCTORS,
+  ELIGIBLE_DOCTORS,
+  HCP_SEGMENTATIONS,
+  PORTFOLIO_TARGET_DOCTORS,
+  PROPENSITY_FACTORS,
+  SCORE_MAX,
+  SCORE_MIN,
+} from './doctorSegmentation'
+import {
+  CONSENT_BUCKETS,
+  CONSENT_TARGET_DOCTORS,
+  CRITICAL_DEVIATIONS,
+  DEVIATION_ALERTS,
+  isEligible,
+  LOT_TRACES,
+  LOTS_IN_CYCLE,
+  LOTS_WITH_GAP,
+  missingSteps,
+  TRACEABILITY_PERCENT,
+} from './compliance'
+import { REPORT_CATALOG } from './agReports'
+import {
+  FIELD_DECISION,
+  NON_DELIVERY_BY_REASON,
+  QUEUE_SUMMARY,
+  REP_EXECUTIONS,
+  SAMPLE_FACTORS,
+  SAMPLE_RECOMMENDATION,
+  TEAM_EXECUTION as AG_TEAM_EXECUTION,
+  TOTAL_NON_DELIVERIES,
+  TRACEABILITY_PARCEL,
+  UNRECORDED_DELIVERIES,
+} from './agFieldExecution'
 import {
   ACTIVATED_DOCTORS,
   BASELINE_SHARE_PERCENT,
@@ -2008,6 +2071,256 @@ describe('mock determinístico', () => {
       const value = random()
       expect(value).toBeGreaterThanOrEqual(0)
       expect(value).toBeLessThan(1)
+    }
+  })
+})
+
+describe('P10 — o ciclo entre Estoque, Redistribuição e o bloqueio do Otimizador', () => {
+  const top = TOP_SUGGESTION as TransferSuggestion
+
+  it('tem uma fila de transferências com topo definido', () => {
+    expect(TOP_SUGGESTION).toBeDefined()
+    expect(TRANSFER_SUGGESTIONS.length).toBeGreaterThan(0)
+  })
+
+  it('mantém o lote retido com o volume que o bloqueio do Otimizador reteve', () => {
+    expect(BLOCKED_LOT).toBeDefined()
+    expect(BLOCKED_LOT?.units).toBe(BLOCKED_SAMPLES)
+    expect(BLOCKED_LOT?.region).toBe(STOCKOUT_BLOCK.region)
+    expect(BLOCKED_LOT?.monthlyOutflow).toBe(0)
+    expect(lotStatus(BLOCKED_LOT as Lot)).toBe('at_risk')
+    expect(AT_RISK_LOTS).toContain(BLOCKED_LOT)
+  })
+
+  /**
+   * O requisito da fase: o lote em risco que aparece no Estoque tem que ser a
+   * mesma coisa que a Redistribuição propõe transferir. `toBe` em vez de
+   * `toEqual` de propósito — se um dia alguém redigitar o lote na fila em vez
+   * de derivá-lo, o teste cai.
+   */
+  it('propõe transferir exatamente o lote que o Estoque mostra parado', () => {
+    expect(top.lot).toBe(BLOCKED_LOT)
+    expect(BLOCKED_LOT_SUGGESTION).toBe(top)
+    expect(top.blockedByStockout).toBe(true)
+    expect(top.inventoryRoute).toBe('/ag/estoque')
+    expect(top.stockoutSourceRoute).toBe(STOCKOUT_SOURCE_ROUTE)
+    expect(ROUTES.some((route) => route.path === top.inventoryRoute)).toBe(true)
+    expect(ROUTES.some((route) => route.path === top.stockoutSourceRoute)).toBe(true)
+  })
+
+  it('prioriza a fila por valor recuperado, sem empurrar o lote bloqueado para o topo na mão', () => {
+    const values = TRANSFER_SUGGESTIONS.map((suggestion) => suggestion.recoveredValueBrl)
+    expect(values).toEqual([...values].sort((a, b) => b - a))
+    expect(TRANSFER_SUGGESTIONS[0]).toBe(top)
+  })
+
+  it('nunca transfere mais do que há em risco nem mais do que o destino absorve', () => {
+    for (const suggestion of TRANSFER_SUGGESTIONS) {
+      expect(suggestion.unitsToTransfer).toBeLessThanOrEqual(suggestion.unitsAtRisk)
+      expect(suggestion.unitsToTransfer).toBeLessThanOrEqual(suggestion.absorptionUnits)
+      expect(suggestion.residualUnitsAtRisk).toBe(
+        suggestion.unitsAtRisk - suggestion.unitsToTransfer,
+      )
+      expect(suggestion.recoveredValueBrl).toBe(
+        Math.round(suggestion.unitsToTransfer * UNIT_COST_BRL),
+      )
+      expect(suggestion.windowDays).toBe(suggestion.daysToExpiry - suggestion.destination.transitDays)
+      expect(suggestion.reasons.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('soma o recuperável a partir da fila, não de um número declarado', () => {
+    const units = TRANSFER_SUGGESTIONS.reduce((sum, s) => sum + s.unitsToTransfer, 0)
+    const value = TRANSFER_SUGGESTIONS.reduce((sum, s) => sum + s.recoveredValueBrl, 0)
+    expect(RECOVERABLE_UNITS).toBe(units)
+    expect(RECOVERABLE_VALUE_BRL).toBe(value)
+  })
+
+  it('põe a transferência do lote bloqueado acima da alçada de quem está na tela', () => {
+    expect(top.authority).toBe('operations_director')
+    expect(isWithinUserAuthority(top.authority)).toBe(false)
+    expect(SUGGESTIONS_ABOVE_USER_AUTHORITY).toBeGreaterThan(0)
+  })
+
+  it('fecha o saldo por região e por tipo de detentor no total do estoque', () => {
+    const byRegion = BALANCE_BY_REGION.reduce((sum, row) => sum + row.units, 0)
+    const byHolder = BALANCE_BY_HOLDER_KIND.reduce((sum, row) => sum + row.units, 0)
+    expect(byRegion).toBe(TOTAL_UNITS)
+    expect(byHolder).toBe(TOTAL_UNITS)
+
+    const atRisk = BALANCE_BY_REGION.reduce((sum, row) => sum + row.unitsAtRisk, 0)
+    expect(atRisk).toBe(TOTAL_UNITS_AT_RISK)
+  })
+})
+
+describe('P10 — AG planejamento, segmentação e compliance', () => {
+  it('prevê o plano liberado somado ao que o bloqueio reteve', () => {
+    expect(FORECAST_TOTAL_SAMPLES).toBe(REGION_TOTAL.recommendedSamples + BLOCKED_SAMPLES)
+    expect(TERRITORY_DEMAND_TOTAL).toBe(FORECAST_TOTAL_SAMPLES)
+  })
+
+  it('fecha o desdobramento da demanda por território e por especialidade', () => {
+    for (const row of TERRITORY_DEMAND) {
+      expect(row.byProduct.reduce((sum, value) => sum + value, 0)).toBe(row.total)
+    }
+    expect(TERRITORY_DEMAND.reduce((sum, row) => sum + row.total, 0)).toBe(TERRITORY_DEMAND_TOTAL)
+
+    expect(SPECIALTY_DEMAND.reduce((sum, row) => sum + row.samples, 0)).toBe(
+      SPECIALTY_DEMAND_TOTAL.samples,
+    )
+    expect(SPECIALTY_DEMAND.reduce((sum, row) => sum + row.targetDoctors, 0)).toBe(
+      SPECIALTY_DEMAND_TOTAL.targetDoctors,
+    )
+    expect(SPECIALTY_DEMAND_TOTAL.targetDoctors).toBe(REGION_TOTAL.targetDoctors)
+    expect(SPECIALTY_DEMAND_TOTAL.samples).toBe(REGION_TOTAL.recommendedSamples)
+  })
+
+  /**
+   * O score explicado só explica se a conta fecha: a soma das contribuições
+   * exibidas tem que dar o score exibido, sem arredondamento escondido.
+   */
+  it('faz o score de propensão fechar com a soma dos fatores', () => {
+    const weight = PROPENSITY_FACTORS.reduce((sum, factor) => sum + factor.weight, 0)
+    expect(weight).toBeCloseTo(1, 5)
+
+    for (const hcp of HCP_SEGMENTATIONS) {
+      const total = hcp.propensityFactors.reduce((sum, item) => sum + item.contributionPoints, 0)
+      expect(hcp.factorsTotal).toBeCloseTo(total, 5)
+      expect(hcp.propensityScore).toBeCloseTo(hcp.propensityBase + total, 5)
+      expect(hcp.propensityScore).toBeGreaterThanOrEqual(SCORE_MIN)
+      expect(hcp.propensityScore).toBeLessThanOrEqual(SCORE_MAX)
+      expect(hcp.potentialScore).toBeCloseTo(hcp.potentialAnchor + hcp.potentialModulation, 5)
+    }
+  })
+
+  it('cancela a recomendação de quem não é elegível', () => {
+    const blocked = HCP_SEGMENTATIONS.filter((hcp) => hcp.eligibility.status !== 'eligible')
+    expect(blocked.length).toBeGreaterThan(0)
+    for (const hcp of blocked) {
+      expect(hcp.eligibility.reasons.length).toBeGreaterThan(0)
+    }
+    expect(ELIGIBLE_DOCTORS + BLOCKED_DOCTORS).toBe(PORTFOLIO_TARGET_DOCTORS)
+    expect(PORTFOLIO_TARGET_DOCTORS).toBe(REGION_TOTAL.targetDoctors)
+  })
+
+  it('reparte os consentimentos sobre a carteira canônica de médicos-alvo', () => {
+    const total = CONSENT_BUCKETS.reduce((sum, bucket) => sum + bucket.doctors, 0)
+    expect(total).toBe(CONSENT_TARGET_DOCTORS)
+    expect(CONSENT_TARGET_DOCTORS).toBe(REGION_TOTAL.targetDoctors)
+    expect(isEligible('valid')).toBe(true)
+    expect(isEligible('expired')).toBe(false)
+    expect(isEligible('missing')).toBe(false)
+  })
+
+  it('deriva a rastreabilidade dos lotes com buraco, e mostra pelo menos uma trilha incompleta', () => {
+    expect(TRACEABILITY_PERCENT).toBeCloseTo(
+      Math.round(((LOTS_IN_CYCLE - LOTS_WITH_GAP) / LOTS_IN_CYCLE) * 1000) / 10,
+      1,
+    )
+    const withGap = LOT_TRACES.filter((trace) => missingSteps(trace) > 0)
+    expect(withGap.length).toBeGreaterThan(0)
+    for (const trace of withGap) expect(trace.integrity).not.toBe('complete')
+    expect(CRITICAL_DEVIATIONS).toBeGreaterThan(0)
+  })
+
+  it('liga um alerta de desvio ao lote que o Estoque mostra em risco', () => {
+    const linked = DEVIATION_ALERTS.filter((alert) => alert.link !== null)
+    expect(linked.length).toBeGreaterThan(0)
+    for (const alert of linked) {
+      const route = alert.link?.route ?? ''
+      expect(ROUTES.some((entry) => entry.path === route)).toBe(true)
+    }
+    expect(
+      DEVIATION_ALERTS.some((alert) => alert.lotCode === BLOCKED_LOT?.batchCode),
+    ).toBe(true)
+  })
+
+  it('aponta cada relatório do AG para uma rota que existe', () => {
+    expect(REPORT_CATALOG.length).toBeGreaterThan(0)
+    for (const report of REPORT_CATALOG) {
+      expect(ROUTES.some((route) => route.path === report.originRoute)).toBe(true)
+    }
+  })
+})
+
+describe('P10 — AG execução em campo', () => {
+  it('agrega a execução da equipe a partir dos representantes, sem total redigitado', () => {
+    const sum = (pick: (rep: (typeof REP_EXECUTIONS)[number]) => number) =>
+      REP_EXECUTIONS.reduce((total, rep) => total + pick(rep), 0)
+
+    expect(AG_TEAM_EXECUTION.reps).toBe(REP_EXECUTIONS.length)
+    expect(AG_TEAM_EXECUTION.deliveries).toBe(sum((rep) => rep.deliveries))
+    expect(AG_TEAM_EXECUTION.samples).toBe(sum((rep) => rep.samples))
+    expect(AG_TEAM_EXECUTION.acceptedDeliveries).toBe(sum((rep) => rep.acceptedDeliveries))
+    expect(AG_TEAM_EXECUTION.doctorsVisited).toBe(sum((rep) => rep.doctorsVisited))
+    expect(AG_TEAM_EXECUTION.doctorsTarget).toBe(sum((rep) => rep.doctorsTarget))
+    expect(AG_TEAM_EXECUTION.samplesWithoutReceipt).toBe(sum((rep) => rep.samplesWithoutReceipt))
+  })
+
+  it('fecha a fila de entregas por estado', () => {
+    const byStatus = Object.values(QUEUE_SUMMARY.byStatus).reduce((sum, value) => sum + value, 0)
+    expect(byStatus).toBe(QUEUE_SUMMARY.total)
+  })
+
+  /**
+   * Entrega não concluída sem motivo escrito é o único caso em que a plataforma
+   * não sabe dizer onde a amostra parou. O número pode ser alto, mas tem que
+   * estar na tela com nome — não diluído no total.
+   */
+  it('separa a não entrega sem motivo do resto dos motivos', () => {
+    const total = NON_DELIVERY_BY_REASON.reduce((sum, row) => sum + row.deliveries, 0)
+    expect(total).toBe(TOTAL_NON_DELIVERIES)
+
+    const gaps = NON_DELIVERY_BY_REASON.filter((row) => row.gap)
+    expect(gaps).toHaveLength(1)
+    expect(gaps[0]?.deliveries).toBe(UNRECORDED_DELIVERIES)
+    for (const row of NON_DELIVERY_BY_REASON) expect(row.detail.length).toBeGreaterThan(0)
+  })
+
+  it('explica a recomendação de amostra por fatores que somam o escore exibido', () => {
+    const weight = SAMPLE_FACTORS.reduce((sum, factor) => sum + factor.weightPercent, 0)
+    expect(weight).toBe(100)
+
+    const score =
+      SAMPLE_FACTORS.reduce(
+        (sum, factor) => sum + (factor.weightPercent * factor.scorePercent) / 100,
+        0,
+      )
+    expect(SAMPLE_RECOMMENDATION.scorePercent).toBeCloseTo(score, 0)
+    expect(SAMPLE_RECOMMENDATION.reason.length).toBeGreaterThan(0)
+  })
+
+  it('prende a recomendação a uma decisão existente, sem recomendação solta', () => {
+    expect(FIELD_DECISION).toBeDefined()
+    expect(SAMPLE_RECOMMENDATION.decisionId).toBe(FIELD_DECISION?.id)
+    expect(findDecision(SAMPLE_RECOMMENDATION.decisionId)).toBeDefined()
+    expect(TRACEABILITY_PARCEL.source).toBe('ag')
+    expect(TRACEABILITY_PARCEL.amountBrl).toBeGreaterThan(0)
+  })
+})
+
+describe('P10 — cobertura de telas construídas', () => {
+  const APP_SOURCE = readFileSync(join(SRC, 'App.tsx'), 'utf8')
+
+  /**
+   * Rotas que ainda caem no placeholder. A lista é explícita de propósito: uma
+   * tela sem conteúdo tem que aparecer aqui, não sumir num total.
+   */
+  const PLACEHOLDER_ROUTES: readonly string[] = ['/']
+
+  it('dá a toda rota registrada uma tela construída', () => {
+    const missing = ROUTES.filter(
+      (route) => !APP_SOURCE.includes(`'${route.path}':`),
+    ).map((route) => route.path)
+
+    expect(missing).toEqual(PLACEHOLDER_ROUTES)
+  })
+
+  it('constrói as dez telas do AG', () => {
+    const ag = ROUTES.filter((route) => route.product === 'ag')
+    expect(ag).toHaveLength(10)
+    for (const route of ag) {
+      expect(APP_SOURCE.includes(`'${route.path}':`)).toBe(true)
     }
   })
 })

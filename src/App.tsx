@@ -4,11 +4,15 @@ import { ROUTES } from './routes/registry'
 import { DecisionCentral } from './screens/DecisionCentral'
 import { DecisionDetail } from './screens/DecisionDetail'
 import { AgOverview } from './screens/ag/AgOverview'
+import { FieldExecution as AgFieldExecution } from './screens/ag/FieldExecution'
 import { Reports as AgReports } from './screens/ag/Reports'
 import { AllocationOptimizer } from './screens/ag/AllocationOptimizer'
 import { CampaignPlanning } from './screens/ag/CampaignPlanning'
+import { Compliance } from './screens/ag/Compliance'
 import { ConversionRoi } from './screens/ag/ConversionRoi'
+import { DoctorSegmentation } from './screens/ag/DoctorSegmentation'
 import { Inventory } from './screens/ag/Inventory'
+import { Redistribution } from './screens/ag/Redistribution'
 import { Assortment } from './screens/gtm/Assortment'
 import { CoverageSimulator } from './screens/gtm/CoverageSimulator'
 import { FieldExecution } from './screens/gtm/FieldExecution'
@@ -61,9 +65,13 @@ const SCREENS: Record<string, ReactElement> = {
   '/rgm/relatorios': <Reports />,
   '/ag': <AgOverview />,
   '/ag/campanhas': <CampaignPlanning />,
+  '/ag/segmentacao': <DoctorSegmentation />,
   '/ag/otimizador': <AllocationOptimizer />,
   '/ag/estoque': <Inventory />,
+  '/ag/campo': <AgFieldExecution />,
   '/ag/conversao-roi': <ConversionRoi />,
+  '/ag/redistribuicao': <Redistribution />,
+  '/ag/compliance': <Compliance />,
   '/ag/relatorios': <AgReports />,
   '/gtm': <GtmOverview />,
   '/gtm/planejamento': <GtmPlanning />,

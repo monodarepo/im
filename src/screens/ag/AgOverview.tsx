@@ -46,7 +46,7 @@ export function AgOverview() {
     <div className="space-y-5">
       <div>
         <h1 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Visão geral do amostra grátis
+          Visão geral do Amostra Grátis
         </h1>
         <p className="mt-1 text-lg font-semibold tracking-tight text-slate-900">
           Cockpit do investimento em amostra
