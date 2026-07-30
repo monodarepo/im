@@ -278,6 +278,37 @@ import {
 } from './compliance'
 import { REPORT_CATALOG } from './agReports'
 import {
+  AUDIT_TRAILS_CONSISTENT,
+  DECISION_RECORDS,
+  FEATURED_DECISION,
+  PARCEL_ROUTES,
+  TOTAL_DECISION_IMPACT_BRL,
+  findDecisionRecord,
+  parcelsReconcile,
+} from './decisionRecords'
+import {
+  DAILY_BRIEFING,
+  FUNNEL_STAGE_ORDER,
+  FUNNEL_VIEW_ORDER,
+  TOWER_PRIMARY_KPIS,
+  TOWER_SECONDARY_KPIS,
+  funnelOf,
+} from './tower'
+import {
+  DRILL_ORDER,
+  MAP_LAYERS,
+  drillInto,
+  layerValue,
+  rootNode,
+} from './mapLayers'
+import { ANSWER_BLOCKS, CANONICAL_QUESTION, SUGGESTED_QUESTIONS } from './copilotAnswer'
+import { ALERTS, PRIORITIZED_ALERTS, isWellFormed } from './notifications'
+import {
+  DECISION_TRANSITIONS,
+  isAuditTrailConsistent,
+  type DecisionState,
+} from '../domain/decision'
+import {
   FIELD_DECISION,
   NON_DELIVERY_BY_REASON,
   QUEUE_SUMMARY,
@@ -2304,9 +2335,10 @@ describe('P10 — cobertura de telas construídas', () => {
 
   /**
    * Rotas que ainda caem no placeholder. A lista é explícita de propósito: uma
-   * tela sem conteúdo tem que aparecer aqui, não sumir num total.
+   * tela sem conteúdo tem que aparecer aqui, não sumir num total. Desde a
+   * Torre Integrada ela está vazia — as 45 rotas têm tela construída.
    */
-  const PLACEHOLDER_ROUTES: readonly string[] = ['/']
+  const PLACEHOLDER_ROUTES: readonly string[] = []
 
   it('dá a toda rota registrada uma tela construída', () => {
     const missing = ROUTES.filter(
@@ -2322,5 +2354,320 @@ describe('P10 — cobertura de telas construídas', () => {
     for (const route of ag) {
       expect(APP_SOURCE.includes(`'${route.path}':`)).toBe(true)
     }
+  })
+})
+
+describe('P11 — objeto Decisão e a decomposição de R$ 4,8M', () => {
+  it('fecha a soma das parcelas contra o impacto de cada decisão', () => {
+    for (const record of DECISION_RECORDS) {
+      expect(parcelsReconcile(record)).toBe(true)
+      expect(parcelTotal(record.parcels)).toBe(record.impactBrl)
+    }
+  })
+
+  /**
+   * A tese da plataforma inteira mora nesta asserção: um valor consolidado que
+   * se decompõe em três produtos e volta para a tela que apurou cada parcela.
+   */
+  it('decompõe a D-2026-0001 em GTM, RGM e AG com caminho de volta', () => {
+    expect(FEATURED_DECISION.id).toBe('D-2026-0001')
+    expect(FEATURED_DECISION.impactBrl).toBe(4_800_000)
+
+    const byProduct = Object.fromEntries(
+      FEATURED_DECISION.parcels.map((parcel) => [parcel.source, parcel.amountBrl]),
+    )
+    expect(byProduct.gtm).toBe(2_100_000)
+    expect(byProduct.rgm).toBe(1_900_000)
+    expect(byProduct.ag).toBe(800_000)
+    expect(parcelTotal(FEATURED_DECISION.parcels)).toBe(4_800_000)
+
+    for (const parcel of FEATURED_DECISION.parcels) {
+      const target = PARCEL_ROUTES[parcel.id]
+      expect(target).toBeDefined()
+      expect(ROUTES.some((route) => route.path === target?.route)).toBe(true)
+    }
+  })
+
+  it('dá à decisão central todos os atributos que o detalhe exibe', () => {
+    expect(FEATURED_DECISION.confidence).toBeDefined()
+    expect(FEATURED_DECISION.urgency).toBeDefined()
+    expect(FEATURED_DECISION.effort).toBeDefined()
+    expect(FEATURED_DECISION.owner.length).toBeGreaterThan(0)
+    expect(FEATURED_DECISION.authority).toBeDefined()
+    expect(FEATURED_DECISION.autonomy).toBeDefined()
+    expect(FEATURED_DECISION.dueOn > HOJE).toBe(true)
+    expect(FEATURED_DECISION.evidence.length).toBeGreaterThanOrEqual(4)
+    expect(FEATURED_DECISION.probableCause.length).toBeGreaterThan(0)
+    expect(FEATURED_DECISION.recommendation.length).toBeGreaterThan(0)
+  })
+
+  it('aponta toda evidência para uma tela que existe', () => {
+    for (const record of DECISION_RECORDS) {
+      for (const item of record.evidence) {
+        expect(
+          ROUTES.some(
+            (route) => route.path === item.route || route.navPath === item.route,
+          ),
+        ).toBe(true)
+      }
+    }
+  })
+
+  /**
+   * Uma trilha que salta estado é uma trilha que não aconteceu. Cada elo tem
+   * que continuar o anterior e respeitar o mapa de transições do domínio.
+   */
+  it('mantém a trilha de auditoria consistente com o mapa de transições', () => {
+    expect(AUDIT_TRAILS_CONSISTENT).toBe(true)
+
+    for (const record of DECISION_RECORDS) {
+      expect(isAuditTrailConsistent(record.audit)).toBe(true)
+      expect(record.audit[0]?.from).toBeNull()
+      expect(record.audit[record.audit.length - 1]?.to).toBe(record.state)
+
+      for (const entry of record.audit) {
+        if (entry.from === null) continue
+        expect(DECISION_TRANSITIONS[entry.from].includes(entry.to)).toBe(true)
+      }
+    }
+  })
+
+  it('recusa uma trilha que salta estado', () => {
+    const broken = [
+      { id: 'a', on: HOJE, actor: 'x', role: 'y', from: null, to: 'draft' as DecisionState, note: '' },
+      { id: 'b', on: HOJE, actor: 'x', role: 'y', from: 'draft' as DecisionState, to: 'approved' as DecisionState, note: '' },
+    ]
+    expect(isAuditTrailConsistent(broken)).toBe(false)
+  })
+
+  it('soma o total sob decisão a partir dos registros', () => {
+    expect(TOTAL_DECISION_IMPACT_BRL).toBe(
+      DECISION_RECORDS.reduce((sum, record) => sum + record.impactBrl, 0),
+    )
+    expect(findDecisionRecord('D-2026-0001')).toBeDefined()
+    expect(findDecisionRecord('D-9999-9999')).toBeUndefined()
+  })
+})
+
+describe('P11 — Torre Integrada', () => {
+  it('traz dez indicadores principais e oito na linha secundária', () => {
+    expect(TOWER_PRIMARY_KPIS).toHaveLength(10)
+    expect(TOWER_SECONDARY_KPIS).toHaveLength(8)
+  })
+
+  /** A Torre não apura: todo indicador devolve o clique para quem apurou. */
+  it('devolve cada indicador para uma rota existente', () => {
+    for (const kpi of [...TOWER_PRIMARY_KPIS, ...TOWER_SECONDARY_KPIS]) {
+      expect(ROUTES.some((route) => route.path === kpi.route)).toBe(true)
+      expect(kpi.attestation.source.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('preserva os cinco indicadores canônicos da seção 10.1 no topo', () => {
+    const canonical = TOWER_PRIMARY_KPIS.slice(0, 5)
+    expect(canonical.map((kpi) => kpi.value)).toEqual(MARKET_KPIS.map((kpi) => kpi.value))
+    expect(canonical.map((kpi) => kpi.label)).toEqual(MARKET_KPIS.map((kpi) => kpi.label))
+  })
+
+  it('percorre os cinco estágios do funil em todas as sete visões', () => {
+    expect(FUNNEL_VIEW_ORDER).toHaveLength(7)
+    expect(FUNNEL_STAGE_ORDER).toEqual([
+      'identified',
+      'approved',
+      'executing',
+      'realized',
+      'validated',
+    ])
+
+    for (const view of FUNNEL_VIEW_ORDER) {
+      const points = funnelOf(view)
+      expect(points).toHaveLength(5)
+      expect(points[0]?.conversionPercent).toBeNull()
+      expect(points[0]?.shareOfIdentifiedPercent).toBe(100)
+
+      const values = points.map((point) => point.value)
+      expect(values).toEqual([...values].sort((a, b) => b - a))
+    }
+  })
+
+  it('ancora o topo do funil de receita bruta no total sob decisão', () => {
+    expect(funnelOf('gross_revenue')[0]?.value).toBe(TOTAL_DECISION_IMPACT_BRL)
+  })
+
+  it('prioriza o briefing por R$ em risco e leva a rotas existentes', () => {
+    expect(DAILY_BRIEFING.length).toBeGreaterThanOrEqual(3)
+    expect(DAILY_BRIEFING.length).toBeLessThanOrEqual(5)
+
+    const values = DAILY_BRIEFING.map((alert) => alert.valueAtRiskBrl)
+    expect(values).toEqual([...values].sort((a, b) => b - a))
+
+    for (const alert of DAILY_BRIEFING) {
+      const isDecisionRoute = alert.route.startsWith('/decisoes/')
+      expect(isDecisionRoute || ROUTES.some((route) => route.path === alert.route)).toBe(true)
+      if (alert.decisionId) expect(findDecisionRecord(alert.decisionId)).toBeDefined()
+    }
+  })
+})
+
+describe('P11 — mapa inteligente', () => {
+  it('oferece as nove camadas, cada uma ligada a uma tela que existe', () => {
+    expect(MAP_LAYERS).toHaveLength(9)
+    for (const layer of MAP_LAYERS) {
+      expect(ROUTES.some((route) => route.path === layer.route)).toBe(true)
+      expect(layer.question.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('mantém a camada de oportunidade igual à seção 10.2', () => {
+    expect(layerValue('opportunity', 'SP')).toBe(4_800_000)
+    expect(layerValue('opportunity', 'MG')).toBe(3_200_000)
+    expect(layerValue('opportunity', 'RJ')).toBe(2_700_000)
+  })
+
+  it('desce os seis níveis do drill', () => {
+    expect(DRILL_ORDER).toEqual([
+      'estado',
+      'municipio',
+      'territorio',
+      'cliente',
+      'loja',
+      'produto',
+    ])
+
+    let node = rootNode('SP', 'opportunity', 'São Paulo')
+    const visited = [node.level]
+
+    for (let depth = 0; depth < DRILL_ORDER.length; depth += 1) {
+      const children = drillInto(node)
+      if (children.length === 0) break
+      visited.push(children[0]?.level ?? 'estado')
+      node = children[0] as typeof node
+    }
+
+    expect(visited).toEqual(DRILL_ORDER)
+    expect(drillInto(node)).toHaveLength(0)
+  })
+
+  /** Drill que não fecha com o nível de cima ensina a desconfiar da tela toda. */
+  it('fecha a soma dos filhos no valor do pai em todos os níveis', () => {
+    let node = rootNode('SP', 'opportunity', 'São Paulo')
+
+    for (let depth = 0; depth < DRILL_ORDER.length; depth += 1) {
+      const children = drillInto(node)
+      if (children.length === 0) break
+      const sum = children.reduce((total, child) => total + child.value, 0)
+      expect(sum).toBe(node.value)
+      node = children[0] as typeof node
+    }
+  })
+
+  it('devolve os mesmos filhos ao descer duas vezes pelo mesmo caminho', () => {
+    const root = rootNode('MG', 'sellout', 'Minas Gerais')
+    expect(drillInto(root)).toEqual(drillInto(root))
+  })
+})
+
+describe('P11 — Copiloto executivo', () => {
+  it('responde a pergunta canônica com os dez blocos', () => {
+    expect(CANONICAL_QUESTION).toContain('Losartana')
+    expect(CANONICAL_QUESTION).toContain('São Paulo')
+    expect(ANSWER_BLOCKS).toHaveLength(10)
+
+    for (const block of ANSWER_BLOCKS) {
+      expect(block.headline.length).toBeGreaterThan(0)
+      expect(block.rows.length).toBeGreaterThan(0)
+      expect(block.attestation.source.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('liga cada bloco a uma tela que existe', () => {
+    for (const block of ANSWER_BLOCKS) {
+      const isDecisionRoute = block.route.startsWith('/decisoes/')
+      expect(isDecisionRoute || ROUTES.some((route) => route.path === block.route)).toBe(true)
+    }
+  })
+
+  it('cobre os quatro produtos na resposta', () => {
+    const products = new Set(ANSWER_BLOCKS.map((block) => block.product))
+    expect(products.size).toBeGreaterThanOrEqual(3)
+    expect(products.has('hub')).toBe(true)
+    expect(products.has('gtm')).toBe(true)
+    expect(products.has('rgm')).toBe(true)
+    expect(products.has('ag')).toBe(true)
+  })
+
+  it('oferece de três a quatro perguntas sugeridas, com a canônica respondida', () => {
+    expect(SUGGESTED_QUESTIONS.length).toBeGreaterThanOrEqual(3)
+    expect(SUGGESTED_QUESTIONS.length).toBeLessThanOrEqual(4)
+
+    const answered = SUGGESTED_QUESTIONS.filter((question) => question.answered)
+    expect(answered).toHaveLength(1)
+    expect(answered[0]?.text).toBe(CANONICAL_QUESTION)
+  })
+})
+
+describe('P11 — Central de Notificações', () => {
+  it('traz os quinze alertas prioritários', () => {
+    expect(ALERTS).toHaveLength(15)
+    expect(PRIORITIZED_ALERTS).toHaveLength(15)
+  })
+
+  /** Os cinco elementos são obrigatórios: alerta pela metade não vai para a fila. */
+  it('exige a anatomia dos cinco elementos em todo alerta', () => {
+    for (const alert of ALERTS) {
+      expect(isWellFormed(alert)).toBe(true)
+      expect(alert.evidence.length).toBeGreaterThan(0)
+      expect(alert.probableCause.length).toBeGreaterThan(0)
+      expect(alert.suggestedAction.length).toBeGreaterThan(0)
+      expect(alert.owner.length).toBeGreaterThan(0)
+      expect(alert.ownerRole.length).toBeGreaterThan(0)
+      expect(alert.valueAtRiskBrl).toBeGreaterThanOrEqual(0)
+    }
+  })
+
+  it('ordena por severidade e, dentro dela, por valor em risco', () => {
+    const rank = { critical: 0, attention: 1, informative: 2 }
+    for (let index = 1; index < PRIORITIZED_ALERTS.length; index += 1) {
+      const previous = PRIORITIZED_ALERTS[index - 1]
+      const current = PRIORITIZED_ALERTS[index]
+      if (!previous || !current) continue
+      const bySeverity = rank[previous.severity] - rank[current.severity]
+      expect(bySeverity).toBeLessThanOrEqual(0)
+      if (bySeverity === 0) {
+        expect(previous.valueAtRiskBrl).toBeGreaterThanOrEqual(current.valueAtRiskBrl)
+      }
+    }
+  })
+
+  it('leva todo alerta a uma tela ou decisão que existe', () => {
+    for (const alert of ALERTS) {
+      const isDecisionRoute = alert.route.startsWith('/decisoes/')
+      expect(isDecisionRoute || ROUTES.some((route) => route.path === alert.route)).toBe(true)
+      if (alert.decisionId) expect(findDecisionRecord(alert.decisionId)).toBeDefined()
+    }
+  })
+
+  it('usa somente personas fictícias como dono', () => {
+    const allowed = ['Carla Mendes', 'João Pedro', 'Mariana Santos', 'Fernanda Lima']
+    for (const alert of ALERTS) expect(allowed).toContain(alert.owner)
+  })
+})
+
+describe('P11 — a plataforma fecha em 45 telas', () => {
+  it('registra as quatro telas de plataforma da seção 2', () => {
+    const platform = ROUTES.filter((route) => route.product === null)
+    expect(platform.map((route) => route.path)).toEqual([
+      '/',
+      '/decisoes',
+      '/copiloto',
+      '/notificacoes',
+    ])
+  })
+
+  it('reconcilia a contagem da seção 12.3', () => {
+    const coverage = routeCoverage()
+    expect(coverage.expected).toBe(45)
+    expect(coverage.mapped).toBe(45)
+    expect(coverage.missing).toBe(0)
   })
 })

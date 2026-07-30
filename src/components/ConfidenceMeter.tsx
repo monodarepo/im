@@ -35,8 +35,11 @@ export function ConfidenceMeter({ confidence, showLabel = false }: ConfidenceMet
           />
         ))}
       </span>
-      {showLabel ? <span className="text-delta text-neutral">{CONFIDENCE_LABEL[confidence]}</span> : null}
-      <span className="sr-only">{CONFIDENCE_LABEL[confidence]}</span>
+      {showLabel ? (
+        <span className="text-delta text-neutral">{CONFIDENCE_LABEL[confidence]}</span>
+      ) : (
+        <span className="sr-only">{CONFIDENCE_LABEL[confidence]}</span>
+      )}
     </span>
   )
 }

@@ -1,14 +1,21 @@
-import { useEffect } from 'react'
-import { FutureButton } from '../components/FutureButton'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { CopilotAnswer, ExplainabilityFooter, QuestionChips } from '../components/CopilotAnswer'
+import { SUGGESTED_QUESTIONS } from '../mock/copilotAnswer'
 import { useCopilot } from '../state/copilotStore'
 
 /**
- * Casca do copiloto: campo de pergunta, área de resposta e rodapé de
- * explicabilidade. Sem lógica nesta fase — o campo fica desabilitado para não
- * prometer uma resposta que ainda não existe.
+ * Copiloto em drawer.
+ *
+ * Mostra exatamente a mesma resposta da tela cheia — mesmo componente, mesma
+ * fonte — em coluna única. O campo livre segue desabilitado com o rótulo da
+ * fase: prometer escrita livre que não existe seria a única coisa pior que não
+ * ter copiloto nenhum.
  */
 export function CopilotDrawer() {
   const { isOpen, close } = useCopilot()
+  const [askedId, setAskedId] = useState<string | null>('canonical')
+  const asked = SUGGESTED_QUESTIONS.find((question) => question.id === askedId) ?? null
 
   useEffect(() => {
     if (!isOpen) return
@@ -23,63 +30,70 @@ export function CopilotDrawer() {
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div
-        className="flex-1 bg-slate-900/30"
-        onClick={close}
-        role="presentation"
-        aria-hidden
-      />
+      <div className="flex-1 bg-slate-900/30" onClick={close} role="presentation" aria-hidden />
 
       <aside
         role="dialog"
         aria-modal="true"
         aria-label="Copiloto"
-        className="flex w-full max-w-md flex-col border-l border-surface-border bg-surface-card shadow-xl"
+        className="flex w-full max-w-xl flex-col border-l border-surface-border bg-surface-app shadow-xl"
       >
-        <header className="flex items-center justify-between border-b border-surface-border px-5 py-4">
+        <header className="flex items-center justify-between border-b border-surface-border bg-surface-card px-5 py-4">
           <div>
             <h2 className="text-sm font-semibold text-slate-900">Copiloto</h2>
             <p className="mt-0.5 text-delta text-neutral">
-              Pergunte sobre os números desta tela
+              Pergunta que atravessa os quatro produtos
             </p>
           </div>
-          <button
-            type="button"
-            onClick={close}
-            aria-label="Fechar copiloto"
-            className="flex h-8 w-8 items-center justify-center rounded-control text-neutral hover:bg-slate-50"
-          >
-            <span aria-hidden>✕</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/copiloto"
+              onClick={close}
+              className="text-delta font-medium underline"
+              style={{ color: 'var(--product-accent)' }}
+            >
+              Abrir em tela cheia
+            </Link>
+            <button
+              type="button"
+              onClick={close}
+              aria-label="Fechar copiloto"
+              className="flex h-8 w-8 items-center justify-center rounded-control text-neutral hover:bg-slate-50"
+            >
+              <span aria-hidden>✕</span>
+            </button>
+          </div>
         </header>
 
-        <div className="border-b border-surface-border p-5">
-          <label htmlFor="copilot-question" className="sr-only">
+        <div className="border-b border-surface-border bg-surface-card px-5 py-4">
+          <QuestionChips selectedId={askedId} onSelect={setAskedId} />
+
+          <label htmlFor="copilot-question-drawer" className="sr-only">
             Pergunta
           </label>
           <textarea
-            id="copilot-question"
-            rows={3}
+            id="copilot-question-drawer"
+            rows={2}
             disabled
-            placeholder="Ex.: por que a participação caiu no canal farma independente?"
-            className="w-full resize-none rounded-control border border-surface-border bg-slate-50 p-3 text-delta-lg text-slate-700 placeholder:text-neutral"
+            placeholder="Escrita livre — Fase 2"
+            className="mt-3 w-full resize-none rounded-control border border-surface-border bg-slate-50 p-3 text-delta-lg text-slate-700 placeholder:text-neutral"
           />
-          <div className="mt-3">
-            <FutureButton label="Perguntar" phase="Fase 2" />
-          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5">
-          <p className="text-delta-lg text-neutral">
-            As respostas aparecem aqui, sempre com os números que as sustentam e a decisão que
-            propõem.
-          </p>
+          {asked?.answered ? (
+            <CopilotAnswer compact />
+          ) : (
+            <p className="text-delta-lg text-neutral">
+              Esta pergunta entra na Fase 2. Selecione a pergunta canônica para ver a resposta
+              montada com dado real.
+            </p>
+          )}
         </div>
 
-        <footer className="border-t border-surface-border px-5 py-4 text-delta text-neutral">
-          Toda resposta cita as fontes consultadas, a data de referência de cada número e o nível de
-          confiança. Recomendação sempre vira uma Decisão rastreável.
-        </footer>
+        <div className="border-t border-surface-border bg-surface-card p-5">
+          <ExplainabilityFooter />
+        </div>
       </aside>
     </div>
   )

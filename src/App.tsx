@@ -2,6 +2,9 @@ import type { ReactElement } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ROUTES } from './routes/registry'
 import { DecisionCentral } from './screens/DecisionCentral'
+import { ExecutiveCopilot } from './screens/ExecutiveCopilot'
+import { IntegratedTower } from './screens/IntegratedTower'
+import { NotificationCenter } from './screens/NotificationCenter'
 import { DecisionDetail } from './screens/DecisionDetail'
 import { AgOverview } from './screens/ag/AgOverview'
 import { FieldExecution as AgFieldExecution } from './screens/ag/FieldExecution'
@@ -52,7 +55,10 @@ import { ScreenPlaceholder } from './shell/ScreenPlaceholder'
  * features previstas em vez de dizer "em construção".
  */
 const SCREENS: Record<string, ReactElement> = {
+  '/': <IntegratedTower />,
   '/decisoes': <DecisionCentral />,
+  '/copiloto': <ExecutiveCopilot />,
+  '/notificacoes': <NotificationCenter />,
   '/rgm': <PricingCockpit />,
   '/rgm/competitividade': <CompetitivenessIndex />,
   '/rgm/elasticidade': <ElasticitySimulator />,
