@@ -130,6 +130,30 @@ import {
   PRICE_CELLS,
   summarizePrices,
 } from './competitive'
+import { PRICE_ELASTICITY, promoLift, simulate } from '../domain/elasticity'
+import {
+  canTransition,
+  DECISION_STATE_TOKEN,
+  isTerminal,
+  parcelTotal,
+  transition,
+} from '../domain/decision'
+import {
+  APPROVAL_DECISION_ID,
+  RECOMMENDED,
+  RECOMMENDED_IMPACT,
+  resolveScenario,
+  SCENARIO_ATTESTATION,
+  SCENARIO_RECOMMENDATION,
+  SCENARIOS,
+} from './scenarios'
+import {
+  corridorStatus,
+  MOLECULE_CAPTURE,
+  PRICE_CORRIDOR,
+  PRICE_LINES,
+} from './pricing'
+import { useDecisionWorkflow } from '../state/decisionWorkflowStore'
 import { createRandom, MOCK_SEED } from './random'
 import { findForbiddenTerms, findNonDeterministicCode, type SourceFile } from './validateMock'
 
@@ -1106,6 +1130,202 @@ describe('transformar oportunidade em Decisão', () => {
     expect(created?.impactBrl).toBe(900_000)
     expect(created?.createdOn).toBe(HOJE)
     expect(created?.product).toBe('hub')
+  })
+})
+
+describe('P5 — simulador de cenários (10.3)', () => {
+  it('reproduz volume e share canônicos pelo modelo, não por número fixo', () => {
+    for (const scenario of SCENARIOS) {
+      const modelled = simulate(scenario.inputs)
+      expect(modelled.volume).toBe(scenario.canonical.volume)
+      expect(modelled.sharePercent).toBe(scenario.canonical.sharePercent)
+    }
+  })
+
+  it('calibra a elasticidade pelo par de desconto zero', () => {
+    expect(PRICE_ELASTICITY).toBeCloseTo(-1.7589, 3)
+    expect(PRICE_ELASTICITY).toBeLessThan(0)
+  })
+
+  it('resolve o lift promocional superlinear das âncoras', () => {
+    expect(promoLift(0)).toBeCloseTo(1, 6)
+    expect(promoLift(0.05)).toBeCloseTo(1.0552, 3)
+    expect(promoLift(0.08)).toBeCloseTo(1.288, 3)
+    expect(promoLift(0.08)).toBeGreaterThan(promoLift(0.05))
+  })
+
+  it('exibe cada linha canônica exatamente como o ESCOPO fixa', () => {
+    const rows = SCENARIOS.map((scenario) => scenario.canonical)
+
+    expect(rows.map((o) => o.priceBrl)).toEqual([12.9, 12.4, 11.9, 12.9])
+    expect(rows.map((o) => o.discountRate * 100)).toEqual([0, 0, 5, 8])
+    expect(rows.map((o) => o.relativePriceIndex)).toEqual([103.2, 99.2, 95.2, 95.0])
+    expect(rows.map((o) => o.volume)).toEqual([
+      1_250_000, 1_340_000, 1_520_000, 1_610_000,
+    ])
+    expect(rows.map((o) => formatMoney(o.sellOutBrl))).toEqual([
+      'R$ 16,1M',
+      'R$ 16,6M',
+      'R$ 18,1M',
+      'R$ 19,6M',
+    ])
+    expect(rows.map((o) => formatPercent(o.sharePercent))).toEqual([
+      '18,7%',
+      '19,2%',
+      '20,8%',
+      '21,9%',
+    ])
+    expect(rows.map((o) => formatMoney(o.netRevenueBrl))).toEqual([
+      'R$ 16,1M',
+      'R$ 16,6M',
+      'R$ 17,2M',
+      'R$ 18,0M',
+    ])
+    expect(rows.map((o) => formatMoney(o.contributionBrl, 2))).toEqual([
+      'R$ 7,31M',
+      'R$ 7,55M',
+      'R$ 7,82M',
+      'R$ 8,19M',
+    ])
+    expect(rows.map((o) => o.promoRoiPercent)).toEqual([null, 15.2, 22.8, 25.6])
+  })
+
+  it('devolve o canônico exato quando os parâmetros são os canônicos', () => {
+    for (const scenario of SCENARIOS) {
+      expect(resolveScenario(scenario, scenario.inputs)).toBe(scenario.canonical)
+    }
+  })
+
+  it('mexer e voltar repõe o canônico — é o chão da demonstração', () => {
+    const scenario = SCENARIOS[3] as (typeof SCENARIOS)[number]
+
+    const mexido = resolveScenario(scenario, { priceBrl: 11.5, discountRate: 0.12 })
+    expect(mexido.volume).not.toBe(scenario.canonical.volume)
+
+    const voltou = resolveScenario(scenario, scenario.inputs)
+    expect(voltou).toEqual(scenario.canonical)
+    expect(voltou.netRevenueBrl).toBe(18_000_000)
+    expect(voltou.contributionBrl).toBe(8_190_000)
+  })
+
+  it('responde a preço e desconto na direção certa fora do canônico', () => {
+    const barato = simulate({ priceBrl: 11.0, discountRate: 0 })
+    const caro = simulate({ priceBrl: 14.0, discountRate: 0 })
+    expect(barato.volume).toBeGreaterThan(caro.volume)
+
+    const semDesconto = simulate({ priceBrl: 12.9, discountRate: 0 })
+    const comDesconto = simulate({ priceBrl: 12.9, discountRate: 0.1 })
+    expect(comDesconto.volume).toBeGreaterThan(semDesconto.volume)
+    expect(comDesconto.netRevenueBrl).not.toBe(semDesconto.netRevenueBrl)
+  })
+
+  it('usa +360 mil unidades, a correção da seção 10.3', () => {
+    expect(RECOMMENDED_IMPACT.volume).toBe(360_000)
+    expect(RECOMMENDED_IMPACT.volume).not.toBe(880_000)
+  })
+
+  it('deriva o impacto do recomendado das próprias linhas canônicas', () => {
+    expect(formatMoneyDelta(RECOMMENDED_IMPACT.netRevenueBrl)).toBe('R$ +1,9M')
+    expect(formatPointsDelta(RECOMMENDED_IMPACT.sharePoints)).toBe('+3,2 pp')
+    expect(formatPercentDelta(RECOMMENDED_IMPACT.contributionPercent)).toBe('+12,0%')
+  })
+
+  it('recomenda o Cenário 3 com a confiança declarada', () => {
+    expect(SCENARIO_RECOMMENDATION.scenarioId).toBe('scenario-3')
+    expect(SCENARIO_RECOMMENDATION.confidencePercent).toBe(78)
+    expect(RECOMMENDED.label).toBe('Cenário 3')
+  })
+})
+
+describe('objeto Decisão (8.1)', () => {
+  beforeEach(() => useDecisionWorkflow.setState({ states: {}, parcels: [] }))
+
+  it('preserva o token canônico do estado do ESCOPO', () => {
+    expect(DECISION_STATE_TOKEN.in_approval).toBe('EM_APROVACAO')
+  })
+
+  it('declara as transições em mapa explícito, com terminal sem saída', () => {
+    expect(canTransition('proposed', 'in_approval')).toBe(true)
+    expect(canTransition('in_approval', 'approved')).toBe(true)
+    expect(canTransition('in_approval', 'concluded')).toBe(false)
+    expect(canTransition('concluded', 'proposed')).toBe(false)
+    expect(isTerminal('rejected')).toBe(true)
+    expect(isTerminal('concluded')).toBe(true)
+    expect(isTerminal('in_approval')).toBe(false)
+  })
+
+  it('recusa transição inválida em vez de gravar estado impossível', () => {
+    expect(() => transition('proposed', 'concluded')).toThrow()
+    expect(transition('proposed', 'in_approval')).toBe('in_approval')
+  })
+
+  it('enviar para aprovação move D-2026-0001 e anexa a parcela de R$ 1,9M', () => {
+    const workflow = useDecisionWorkflow.getState()
+    expect(workflow.stateOf(APPROVAL_DECISION_ID)).toBe('proposed')
+
+    workflow.submitForApproval(APPROVAL_DECISION_ID, {
+      id: 'rgm-scenario-3',
+      source: 'rgm',
+      label: 'Cenário 3',
+      amountBrl: RECOMMENDED_IMPACT.netRevenueBrl,
+      attestation: SCENARIO_ATTESTATION,
+    })
+
+    const after = useDecisionWorkflow.getState()
+    expect(after.stateOf(APPROVAL_DECISION_ID)).toBe('in_approval')
+    expect(DECISION_STATE_TOKEN[after.stateOf(APPROVAL_DECISION_ID)]).toBe('EM_APROVACAO')
+
+    const parcels = after.parcelsOf(APPROVAL_DECISION_ID)
+    expect(parcels).toHaveLength(1)
+    expect(parcels[0]?.source).toBe('rgm')
+    expect(formatMoney(parcelTotal(parcels))).toBe('R$ 1,9M')
+    expect(parcels[0]?.createdOn).toBe(HOJE)
+  })
+
+  it('não duplica a parcela ao enviar duas vezes', () => {
+    const { submitForApproval } = useDecisionWorkflow.getState()
+    const parcel = {
+      id: 'rgm-scenario-3',
+      source: 'rgm' as const,
+      label: 'Cenário 3',
+      amountBrl: 1_875_000,
+      attestation: SCENARIO_ATTESTATION,
+    }
+    submitForApproval(APPROVAL_DECISION_ID, parcel)
+    submitForApproval(APPROVAL_DECISION_ID, parcel)
+    expect(useDecisionWorkflow.getState().parcelsOf(APPROVAL_DECISION_ID)).toHaveLength(1)
+  })
+
+  it('mantém a parcela abaixo do impacto total da decisão', () => {
+    expect(RECOMMENDED_IMPACT.netRevenueBrl).toBeLessThan(
+      findDecision(APPROVAL_DECISION_ID)?.impactBrl ?? 0,
+    )
+  })
+})
+
+describe('cockpit de preço (3.1)', () => {
+  it('lê o semáforo pelo corredor, não por alerta genérico', () => {
+    expect(corridorStatus(PRICE_CORRIDOR.floor - 1)).toBe('below')
+    expect(corridorStatus(PRICE_CORRIDOR.ceiling + 1)).toBe('above')
+    expect(corridorStatus(100)).toBe('inside')
+  })
+
+  it('coloca Losartana acima do corredor, que é o que abre o cenário', () => {
+    const losartana = PRICE_LINES.find((line) => line.id === 'losartana-farma-sudeste')
+    expect(losartana?.relativePriceIndex).toBe(103.2)
+    expect(corridorStatus(losartana?.relativePriceIndex ?? 0)).toBe('above')
+    expect(losartana?.decisionId).toBe('D-2026-0001')
+  })
+
+  it('ancora a captura de Dipirona no impacto de D-2026-0002', () => {
+    const dipirona = PRICE_LINES.find((line) => line.id === 'dipirona-farma-sudeste')
+    expect(dipirona?.potentialCaptureBrl).toBe(3_200_000)
+  })
+
+  it('ranqueia moléculas por captura decrescente', () => {
+    const captures = MOLECULE_CAPTURE.map((item) => item.potentialCaptureBrl)
+    expect([...captures].sort((a, b) => b - a)).toEqual(captures)
+    expect(MOLECULE_CAPTURE[0]?.molecule).toBe('Dipirona')
   })
 })
 

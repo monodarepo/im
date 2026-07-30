@@ -1,7 +1,10 @@
 import type { ReactElement } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ROUTES } from './routes/registry'
+import { DecisionCentral } from './screens/DecisionCentral'
 import { DecisionDetail } from './screens/DecisionDetail'
+import { PricingCockpit } from './screens/rgm/PricingCockpit'
+import { ScenarioSimulator } from './screens/rgm/ScenarioSimulator'
 import { CompetitiveIntel } from './screens/hub/CompetitiveIntel'
 import { Customer360 } from './screens/hub/Customer360'
 import { DataQuality } from './screens/hub/DataQuality'
@@ -20,6 +23,9 @@ import { ScreenPlaceholder } from './shell/ScreenPlaceholder'
  * features previstas em vez de dizer "em construção".
  */
 const SCREENS: Record<string, ReactElement> = {
+  '/decisoes': <DecisionCentral />,
+  '/rgm': <PricingCockpit />,
+  '/rgm/cenarios': <ScenarioSimulator />,
   '/hub': <MarketOverview />,
   '/hub/pulse': <MarketPulse />,
   '/hub/produto/:skuId': <Product360 />,

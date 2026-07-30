@@ -9,6 +9,8 @@ import { findDecision } from '../mock/decisions'
 import { OPPORTUNITIES } from '../mock/opportunities'
 import { useDecisions } from '../state/decisionsStore'
 import { useRadarDecisions } from '../state/radarDecisionsStore'
+import { useDecisionWorkflow } from '../state/decisionWorkflowStore'
+import { DECISION_STATE_LABEL, DECISION_STATE_TONE, parcelTotal } from '../domain/decision'
 
 /**
  * Detalhe da Decisão.
@@ -24,6 +26,8 @@ export function DecisionDetail() {
   const links = useDecisions((state) => state.links).filter(
     (link) => link.decisionId === decisionId,
   )
+  const state = useDecisionWorkflow((store) => store.stateOf(decisionId))
+  const parcels = useDecisionWorkflow((store) => store.parcelsOf(decisionId))
 
   if (!decision) {
     return (
@@ -45,7 +49,7 @@ export function DecisionDetail() {
         <p className="text-delta font-medium tabular-nums text-neutral">{decision.id}</p>
         <h1 className="mt-1 text-lg font-semibold tracking-tight text-slate-900">{decision.title}</h1>
         <div className="mt-2">
-          <StateChip label="Estado — seção 8.1 do ESCOPO" tone="neutral" muted />
+          <StateChip label={DECISION_STATE_LABEL[state]} tone={DECISION_STATE_TONE[state]} />
         </div>
       </div>
 
@@ -55,6 +59,32 @@ export function DecisionDetail() {
           <p className="mt-2 text-delta-lg text-neutral">
             Originada da oportunidade #{origin.rank} do HUB.
           </p>
+        ) : null}
+
+        {parcels.length > 0 ? (
+          <div className="mt-4 border-t border-surface-border pt-3">
+            <p className="text-delta font-medium text-neutral">Parcelas anexadas</p>
+            <ul className="mt-2 divide-y divide-surface-border">
+              {parcels.map((parcel) => (
+                <li key={parcel.id} className="flex items-center gap-3 py-2">
+                  <span
+                    className="rounded-control px-2 py-0.5 text-delta font-medium text-white"
+                    style={{ backgroundColor: PRODUCTS[parcel.source].accent }}
+                  >
+                    {PRODUCTS[parcel.source].shortName}
+                  </span>
+                  <span className="min-w-0 flex-1 text-delta-lg text-slate-700">{parcel.label}</span>
+                  <span className="shrink-0 text-delta-lg font-semibold tabular-nums text-slate-900">
+                    {formatMoney(parcel.amountBrl)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-delta text-neutral">
+              Soma das parcelas: {formatMoney(parcelTotal(parcels))} de{' '}
+              {formatMoney(decision.impactBrl)}.
+            </p>
+          </div>
         ) : null}
       </Panel>
 
