@@ -9,10 +9,13 @@ type PanelProps = {
   children?: ReactNode
 }
 
-/** Cartão base da plataforma. Título, ação opcional, conteúdo, rodapé opcional. */
+/**
+ * Cartão base da plataforma. Ocupa toda a altura da célula do grid para que
+ * painéis lado a lado terminem alinhados, sem vão sob o mais curto.
+ */
 export function Panel({ title, description, action, footer, children }: PanelProps) {
   return (
-    <section className="rounded-card border border-surface-border bg-surface-card">
+    <section className="flex h-full flex-col rounded-card border border-surface-border bg-surface-card">
       <header className="flex items-start justify-between gap-4 px-5 pt-4">
         <div>
           <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
@@ -21,7 +24,7 @@ export function Panel({ title, description, action, footer, children }: PanelPro
         {action ? <div className="shrink-0">{action}</div> : null}
       </header>
 
-      {children ? <div className="px-5 py-4">{children}</div> : <div className="pb-4" />}
+      {children ? <div className="flex-1 px-5 py-4">{children}</div> : <div className="pb-4" />}
 
       {footer ? (
         <footer className="border-t border-surface-border px-5 py-3 text-delta text-neutral">

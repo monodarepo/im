@@ -57,6 +57,33 @@ export const ROUTES: readonly RouteEntry[] = [
     filters: ['period', 'bu', 'brand', 'product', 'molecule', 'channel', 'customer', 'region'],
   },
   {
+    path: '/hub/radar',
+    title: 'Radar de Oportunidades',
+    badge: 'HUB',
+    theme: 'hub',
+    product: 'hub',
+    features: [],
+    filters: ['period', 'bu', 'brand', 'product', 'molecule', 'channel', 'customer', 'region'],
+  },
+  {
+    path: '/hub/causa-raiz',
+    title: 'Diagnóstico de Causa Raiz',
+    badge: 'HUB',
+    theme: 'hub',
+    product: 'hub',
+    features: [],
+    filters: ['period', 'bu', 'brand', 'product', 'molecule', 'region'],
+  },
+  {
+    path: '/hub/territorio-360',
+    title: 'Território 360°',
+    badge: 'HUB',
+    theme: 'hub',
+    product: 'hub',
+    features: [],
+    filters: ['period', 'bu', 'brand', 'region', 'territory'],
+  },
+  {
     path: '/gtm',
     title: 'GTM',
     badge: 'GTM',
@@ -92,16 +119,23 @@ export function findRoute(pathname: string): RouteEntry | undefined {
 }
 
 /**
+ * Entrada que governa uma rota. Subrota sem registro próprio — `/decisoes/:id`,
+ * por exemplo — herda a entrada da sua raiz.
+ */
+export function resolveRoute(pathname: string): RouteEntry | undefined {
+  const exact = findRoute(pathname)
+  if (exact) return exact
+
+  const [, segment] = pathname.split('/')
+  return findRoute(`/${segment ?? ''}`)
+}
+
+/**
  * Identidade de cor da rota. Fora do registro — inclusive em rota inexistente —
  * o chrome fica institucional em vez de herdar a cor do produto anterior.
  */
 export function resolveTheme(pathname: string): ThemeId {
-  const exact = findRoute(pathname)
-  if (exact) return exact.theme
-
-  const [, segment] = pathname.split('/')
-  const root = findRoute(`/${segment ?? ''}`)
-  return root?.theme ?? 'institutional'
+  return resolveRoute(pathname)?.theme ?? 'institutional'
 }
 
 export function routesOfProduct(product: ProductId): RouteEntry[] {

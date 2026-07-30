@@ -49,6 +49,19 @@ import {
   toneForDelta,
   TYPOGRAPHY,
 } from '../design/tokens'
+import { BRAZIL_UF_TILES, REGION_UFS } from '../assets/brazil-uf'
+import { formatKpiValue, MARKET_KPIS } from './kpis'
+import { SALES_MIX, MIX_TOTAL_BRL } from './mix'
+import { DIAGNOSTICS } from './diagnostics'
+import { findDecision } from './decisions'
+import {
+  OPPORTUNITIES,
+  OPPORTUNITY_DECISION_IDS,
+  opportunityLevel,
+  TOTAL_OPPORTUNITY_BRL,
+  UF_OPPORTUNITY,
+} from './opportunities'
+import { SELLOUT_PREVIOUS_TOTAL_BRL, SELLOUT_SERIES } from './sellout'
 import { createRandom, MOCK_SEED } from './random'
 import { findForbiddenTerms, findNonDeterministicCode, type SourceFile } from './validateMock'
 
@@ -452,6 +465,172 @@ describe('filtros globais', () => {
     clearAll()
     expect(useFilters.getState().selections.region).toEqual([])
     expect(useFilters.getState().period).toEqual(DEFAULT_PERIOD)
+  })
+})
+
+describe('números canônicos 10.1', () => {
+  const kpi = (id: string) => MARKET_KPIS.find((item) => item.id === id)
+
+  it('traz os cinco indicadores da Visão Geral', () => {
+    expect(MARKET_KPIS.map((item) => item.label)).toEqual([
+      'Sell-out (R$)',
+      'Market Share (Valor)',
+      'Distribuição Numérica',
+      'Ruptura Estimada',
+      'Preço Relativo (IPR)',
+    ])
+  })
+
+  it('exibe cada valor exatamente como o ESCOPO fixa', () => {
+    expect(MARKET_KPIS.map((item) => formatKpiValue(item))).toEqual([
+      'R$ 256,4M',
+      '18,7%',
+      '76,2%',
+      '7,3%',
+      '98,6',
+    ])
+  })
+
+  it('exibe cada delta com a unidade correta', () => {
+    const rendered = MARKET_KPIS.map((item) =>
+      item.deltaUnit === 'percent' ? formatPercentDelta(item.delta) : formatPointsDelta(item.delta),
+    )
+    expect(rendered).toEqual(['+8,6%', '+0,8 pp', '+1,9 pp', `${MINUS}1,2 pp`, `${MINUS}1,4 pp`])
+  })
+
+  it('lê queda de ruptura como resultado positivo', () => {
+    const stockout = kpi('stockout')
+    expect(stockout?.inverted).toBe(true)
+    expect(toneForDelta(stockout?.delta ?? 0, { inverted: true })).toBe('positive')
+  })
+
+  it('compara todo indicador com os 7 dias anteriores', () => {
+    for (const item of MARKET_KPIS) {
+      expect(item.comparison).toBe('vs. 7 dias anteriores')
+    }
+  })
+
+  it('não deixa indicador sem atestado', () => {
+    for (const item of MARKET_KPIS) {
+      expect(item.attestation.source.length).toBeGreaterThan(0)
+      expect(isStale(item.attestation)).toBe(false)
+    }
+  })
+
+  it('fecha o mix em 100%', () => {
+    expect(SALES_MIX.map((slice) => slice.share)).toEqual([40, 28, 17, 15])
+    expect(SALES_MIX.reduce((sum, slice) => sum + slice.share, 0)).toBe(100)
+  })
+
+  it('ancora o centro do donut no sell-out do período', () => {
+    expect(MIX_TOTAL_BRL).toBe(256_400_000)
+    expect(formatMoney(MIX_TOTAL_BRL)).toBe('R$ 256,4M')
+  })
+
+  it('traz os três diagnósticos rápidos', () => {
+    expect(DIAGNOSTICS.map((d) => d.reading)).toEqual(['Preço e distribuição', 'R$ 2,1M', '−1,3 pp'])
+  })
+})
+
+describe('série de sell-out', () => {
+  it('fecha exatamente no total canônico', () => {
+    const total = SELLOUT_SERIES.reduce((sum, point) => sum + point.current, 0)
+    expect(total).toBe(256_400_000)
+  })
+
+  it('reproduz o crescimento de 8,6% declarado no KPI', () => {
+    const current = SELLOUT_SERIES.reduce((sum, point) => sum + point.current, 0)
+    const growth = (current / SELLOUT_PREVIOUS_TOTAL_BRL - 1) * 100
+    expect(formatPercentDelta(growth)).toBe('+8,6%')
+  })
+
+  it('cobre os 7 dias encerrados em HOJE', () => {
+    expect(SELLOUT_SERIES).toHaveLength(7)
+    expect(SELLOUT_SERIES.at(-1)?.date).toBe(HOJE)
+    expect(SELLOUT_SERIES[0]?.date).toBe(daysAgo(6))
+  })
+
+  it('é idêntica a cada carga do módulo', () => {
+    expect(SELLOUT_SERIES.map((point) => point.current)).toEqual(
+      SELLOUT_SERIES.map((point) => point.current),
+    )
+    for (const point of SELLOUT_SERIES) {
+      expect(point.current).toBeGreaterThan(0)
+      expect(point.previous).toBeGreaterThan(0)
+    }
+  })
+})
+
+describe('números canônicos 10.2', () => {
+  it('traz as cinco oportunidades com valor e decisão', () => {
+    expect(
+      OPPORTUNITIES.map((o) => [o.rank, o.title, formatMoney(o.impactBrl), o.decisionId]),
+    ).toEqual([
+      [1, 'Recuperar distribuição de Losartana em SP', 'R$ 4,8M', 'D-2026-0001'],
+      [2, 'Revisar preço de Dipirona em MG', 'R$ 3,2M', 'D-2026-0002'],
+      [3, 'Aumentar cobertura de médicos, Cardiologia RJ', 'R$ 2,7M', 'D-2026-0003'],
+      [4, 'Redistribuir amostras, Região Sul', 'R$ 1,9M', 'D-2026-0004'],
+      [5, 'Reduzir ruptura de Paracetamol no NE', 'R$ 1,6M', 'D-2026-0005'],
+    ])
+  })
+
+  it('mantém integridade referencial com as decisões', () => {
+    for (const id of OPPORTUNITY_DECISION_IDS) {
+      expect(findDecision(id)).toBeDefined()
+    }
+    expect(new Set(OPPORTUNITY_DECISION_IDS).size).toBe(OPPORTUNITIES.length)
+  })
+
+  it('mantém o impacto igual entre oportunidade e decisão', () => {
+    for (const opportunity of OPPORTUNITIES) {
+      expect(findDecision(opportunity.decisionId)?.impactBrl).toBe(opportunity.impactBrl)
+    }
+  })
+
+  it('ordena por impacto decrescente', () => {
+    const impacts = OPPORTUNITIES.map((o) => o.impactBrl)
+    expect([...impacts].sort((a, b) => b - a)).toEqual(impacts)
+    expect(TOTAL_OPPORTUNITY_BRL).toBe(14_200_000)
+  })
+})
+
+describe('mapa do Brasil', () => {
+  it('cobre as 27 unidades federativas, sem repetição', () => {
+    expect(BRAZIL_UF_TILES).toHaveLength(27)
+    expect(new Set(BRAZIL_UF_TILES.map((tile) => tile.code)).size).toBe(27)
+  })
+
+  it('não sobrepõe blocos na grade', () => {
+    const cells = BRAZIL_UF_TILES.map((tile) => `${tile.cx},${tile.cy}`)
+    expect(new Set(cells).size).toBe(27)
+  })
+
+  it('emite path fechado para cada UF', () => {
+    for (const tile of BRAZIL_UF_TILES) {
+      expect(tile.path.startsWith('M')).toBe(true)
+      expect(tile.path.endsWith('Z')).toBe(true)
+    }
+  })
+
+  it('atribui valor só às UFs cobertas por oportunidade priorizada', () => {
+    expect(UF_OPPORTUNITY.SP?.impactBrl).toBe(4_800_000)
+    expect(UF_OPPORTUNITY.MG?.impactBrl).toBe(3_200_000)
+    expect(UF_OPPORTUNITY.RJ?.impactBrl).toBe(2_700_000)
+
+    for (const uf of REGION_UFS.sul) expect(UF_OPPORTUNITY[uf]?.impactBrl).toBe(1_900_000)
+    for (const uf of REGION_UFS.nordeste) expect(UF_OPPORTUNITY[uf]?.impactBrl).toBe(1_600_000)
+
+    expect(UF_OPPORTUNITY.AC).toBeUndefined()
+    expect(UF_OPPORTUNITY.AM).toBeUndefined()
+  })
+
+  it('gradua o nível pelo impacto', () => {
+    expect(opportunityLevel(4_800_000)).toBe(5)
+    expect(opportunityLevel(3_200_000)).toBe(4)
+    expect(opportunityLevel(2_700_000)).toBe(4)
+    expect(opportunityLevel(1_900_000)).toBe(3)
+    expect(opportunityLevel(1_600_000)).toBe(2)
+    expect(opportunityLevel(undefined)).toBe(1)
   })
 })
 

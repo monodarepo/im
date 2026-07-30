@@ -1,6 +1,6 @@
 import { useLocation } from 'react-router-dom'
 import { CURRENT_PERSONA } from '../domain/persona'
-import { findRoute } from '../routes/registry'
+import { resolveRoute } from '../routes/registry'
 import { activeFilters, FILTER_LABEL, useFilters } from '../state/filtersStore'
 import { useCopilot } from '../state/copilotStore'
 
@@ -19,7 +19,7 @@ function IconButton({ label, children }: { label: string; children: string }) {
 
 export function Header() {
   const { pathname } = useLocation()
-  const route = findRoute(pathname)
+  const route = resolveRoute(pathname)
   const declared = route?.filters ?? []
 
   const filters = useFilters()

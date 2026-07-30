@@ -24,6 +24,12 @@ function render(value: number, unit: DeltaUnit): string {
  * Variação com cor semântica. A cor vem do significado do número, nunca do
  * produto: verde é bom, vermelho é ruim, cinza é estável.
  */
+/** A seta segue o sinal do número; a cor segue o significado. */
+function arrow(value: number): string {
+  if (value === 0) return '→'
+  return value > 0 ? '▲' : '▼'
+}
+
 export function SemanticDelta({
   value,
   unit = 'percent',
@@ -35,10 +41,16 @@ export function SemanticDelta({
 
   return (
     <span className={size === 'sm' ? 'text-delta' : 'text-delta-lg'}>
-      <span className="font-medium tabular-nums" style={{ color: semanticColor(tone) }}>
+      <span
+        className="inline-flex items-baseline gap-1 font-medium tabular-nums"
+        style={{ color: semanticColor(tone) }}
+      >
+        <span aria-hidden className="text-[0.7em]">
+          {arrow(value)}
+        </span>
         {render(value, unit)}
       </span>
-      {comparison ? <span className="ml-1 text-neutral">{comparison}</span> : null}
+      {comparison ? <span className="ml-1.5 text-neutral">{comparison}</span> : null}
     </span>
   )
 }

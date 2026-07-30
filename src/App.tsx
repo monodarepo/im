@@ -1,12 +1,19 @@
+import type { ReactElement } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ROUTES } from './routes/registry'
+import { DecisionDetail } from './screens/DecisionDetail'
+import { MarketOverview } from './screens/hub/MarketOverview'
 import { AppShell } from './shell/AppShell'
 import { ScreenPlaceholder } from './shell/ScreenPlaceholder'
 
 /**
- * Todas as telas saem do registro em `routes/registry.ts`: acrescentar uma rota
- * é acrescentar um dado, não editar este arquivo.
+ * Telas construídas. O que não está aqui cai no placeholder, que lista as
+ * features previstas em vez de dizer "em construção".
  */
+const SCREENS: Record<string, ReactElement> = {
+  '/hub': <MarketOverview />,
+}
+
 export function App() {
   return (
     <Routes>
@@ -15,9 +22,10 @@ export function App() {
           <Route
             key={route.path}
             path={route.path}
-            element={<ScreenPlaceholder route={route} />}
+            element={SCREENS[route.path] ?? <ScreenPlaceholder route={route} />}
           />
         ))}
+        <Route path="/decisoes/:decisionId" element={<DecisionDetail />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
