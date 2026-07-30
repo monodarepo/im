@@ -3,6 +3,9 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { ROUTES } from './routes/registry'
 import { DecisionCentral } from './screens/DecisionCentral'
 import { DecisionDetail } from './screens/DecisionDetail'
+import { AgOverview } from './screens/ag/AgOverview'
+import { AllocationOptimizer } from './screens/ag/AllocationOptimizer'
+import { ConversionRoi } from './screens/ag/ConversionRoi'
 import { Assortment } from './screens/gtm/Assortment'
 import { CoverageSimulator } from './screens/gtm/CoverageSimulator'
 import { FieldExecution } from './screens/gtm/FieldExecution'
@@ -53,6 +56,9 @@ const SCREENS: Record<string, ReactElement> = {
   '/rgm/promocoes': <PromotionMonitor />,
   '/rgm/war-room': <GenericsWarRoom />,
   '/rgm/relatorios': <Reports />,
+  '/ag': <AgOverview />,
+  '/ag/otimizador': <AllocationOptimizer />,
+  '/ag/conversao-roi': <ConversionRoi />,
   '/gtm': <GtmOverview />,
   '/gtm/planejamento': <GtmPlanning />,
   '/gtm/segmentacao': <Segmentation />,

@@ -231,7 +231,7 @@ export const NBA_FILTERS = [
 ] as const
 
 /** Rota do Otimizador de Alocação no AG, destino das amostras a entregar. */
-export const SAMPLE_ALLOCATION_ROUTE = '/ag/alocacao'
+export const SAMPLE_ALLOCATION_ROUTE = '/ag/otimizador'
 
 export const NBA_ATTESTATION = combine([CRM_SFA, IQVIA, SCANNTECH])
 

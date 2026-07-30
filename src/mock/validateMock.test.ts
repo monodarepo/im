@@ -215,6 +215,36 @@ import {
   resolveCoverageScenario,
 } from './coverageScenarios'
 import { AGENDA_EVIDENCE_COUNT, AGENDA_TOPICS, REP_ABOVE_COUNT, REP_BELOW_COUNT, REP_METRICS } from './gtmReports'
+import {
+  ALLOCATION_KPIS,
+  CAMPAIGNS,
+  CONVERSION_FUNNEL,
+  DOCTOR_ALLOCATIONS,
+  doctorOfAllocation,
+  REGION_ALLOCATIONS,
+  REGION_TOTAL,
+  SPECIALTY_DISTRIBUTION,
+  STOCKOUT_BLOCK,
+} from './sampleAllocation'
+import {
+  ACTIVATED_DOCTORS,
+  BASELINE_SHARE_PERCENT,
+  CONVERSION_CHAIN,
+  COST_METRICS,
+  EXPERIMENT_ARMS,
+  INCREMENTAL_LIFT_PERCENT,
+  INCREMENTAL_PER_DOCTOR,
+  SATURATION_CURVE,
+} from './conversion'
+import {
+  ANNUAL_SAMPLE_BUDGET_BRL,
+  BUSINESS_UNITS,
+  CAMPAIGN_ROWS,
+  EXPIRY_LOSSES,
+  TOTAL_BUDGET_BRL,
+  TOTAL_COMMITTED_BRL,
+  TOTAL_EXPIRY_UNITS,
+} from './agOverview'
 import { createRandom, MOCK_SEED } from './random'
 import { findForbiddenTerms, findNonDeterministicCode, type SourceFile } from './validateMock'
 
@@ -1534,20 +1564,30 @@ describe('P6 — perímetro e telas restantes do RGM', () => {
 })
 
 describe('P7 — GTM Next Best Action e roteirização', () => {
-  it('fixa os três médicos canônicos da seção 10.4', () => {
+  it('fixa os cinco médicos canônicos da seção 10.4', () => {
     const canonicos = DOCTORS.filter((doctor) => doctor.canonical)
-    expect(canonicos).toHaveLength(3)
+    expect(canonicos).toHaveLength(5)
     expect(canonicos.map((doctor) => doctor.name)).toEqual([
       'Dr. Ricardo Alencar',
       'Dra. Camila Barros',
       'Dr. Marcelo Vieira',
+      'Dra. Juliana Costa',
+      'Dr. Felipe Nunes',
     ])
     expect(canonicos.map((doctor) => doctor.specialty)).toEqual([
       'cardiologia',
       'clinica-geral',
       'cardiologia',
+      'clinica-geral',
+      'cardiologia',
     ])
-    expect(canonicos.map((doctor) => doctor.potentialTier)).toEqual(['high', 'medium', 'high'])
+    expect(canonicos.map((doctor) => doctor.potentialTier)).toEqual([
+      'high',
+      'medium',
+      'high',
+      'medium',
+      'high',
+    ])
   })
 
   it('respeita a última visita fixada pelo ESCOPO', () => {
@@ -1617,7 +1657,7 @@ describe('P7 — GTM Next Best Action e roteirização', () => {
   })
 
   it('aponta as amostras a entregar para uma rota registrada do AG', () => {
-    expect(SAMPLE_ALLOCATION_ROUTE).toBe('/ag/alocacao')
+    expect(SAMPLE_ALLOCATION_ROUTE).toBe('/ag/otimizador')
     const destino = ROUTES.find((route) => route.path === SAMPLE_ALLOCATION_ROUTE)
     expect(destino).toBeDefined()
     expect(destino?.product).toBe('ag')
@@ -1766,6 +1806,174 @@ describe('P8 — telas restantes do GTM', () => {
     }
     expect(AGENDA_EVIDENCE_COUNT).toBeGreaterThan(0)
     expect(REP_ABOVE_COUNT + REP_BELOW_COUNT).toBeLessThanOrEqual(REP_METRICS.length)
+  })
+})
+
+describe('P9 — AG Otimizador de Alocação (10.5)', () => {
+  it('traz os seis indicadores de topo com os valores do ESCOPO', () => {
+    expect(ALLOCATION_KPIS.map((kpi) => kpi.value)).toEqual([
+      125_000, 8_430, 98_750, 78, 247_875, 4.3,
+    ])
+  })
+
+  it('recomenda para os cinco médicos canônicos, na ordem do ESCOPO', () => {
+    expect(DOCTOR_ALLOCATIONS.map((row) => row.doctorId)).toEqual([
+      'MD-001',
+      'MD-002',
+      'MD-003',
+      'MD-004',
+      'MD-005',
+    ])
+    for (const allocation of DOCTOR_ALLOCATIONS) {
+      expect(doctorOfAllocation(allocation)?.canonical).toBe(true)
+    }
+  })
+
+  it('fixa a linha de cada médico como o ESCOPO a define', () => {
+    expect(
+      DOCTOR_ALLOCATIONS.map((row) => [
+        row.monthlyPrescriptions,
+        row.visitFrequencyDays,
+        row.samplesDelivered,
+        row.recommendedSamples,
+        row.estimatedConversionUnits,
+      ]),
+    ).toEqual([
+      [320, 21, 10, 20, 48],
+      [120, 30, 5, 15, 22],
+      [280, 28, 8, 20, 40],
+      [90, 45, 5, 10, 15],
+      [350, 20, 12, 20, 52],
+    ])
+  })
+
+  it('fecha a tabela por região no total do ESCOPO', () => {
+    const soma = (pick: (row: (typeof REGION_ALLOCATIONS)[number]) => number) =>
+      REGION_ALLOCATIONS.reduce((total, row) => total + pick(row), 0)
+
+    expect(soma((row) => row.targetDoctors)).toBe(REGION_TOTAL.targetDoctors)
+    expect(soma((row) => row.availableStock)).toBe(REGION_TOTAL.availableStock)
+    expect(soma((row) => row.recommendedSamples)).toBe(REGION_TOTAL.recommendedSamples)
+
+    expect(REGION_TOTAL.targetDoctors).toBe(8_430)
+    expect(REGION_TOTAL.availableStock).toBe(125_000)
+    expect(REGION_TOTAL.recommendedSamples).toBe(98_750)
+  })
+
+  it('fecha a distribuição por especialidade em 100%', () => {
+    expect(SPECIALTY_DISTRIBUTION.map((slice) => slice.share)).toEqual([48, 32, 12, 8])
+    expect(SPECIALTY_DISTRIBUTION.reduce((sum, slice) => sum + slice.share, 0)).toBe(100)
+  })
+
+  it('afunila a conversão esperada sem crescer, nas taxas declaradas', () => {
+    expect(CONVERSION_FUNNEL.map((stage) => stage.value)).toEqual([98_750, 72_100, 34_560, 24_150])
+
+    const [distribuidas, utilizadas, prescricoes] = CONVERSION_FUNNEL
+    expect(Math.round(((utilizadas?.value ?? 0) / (distribuidas?.value ?? 1)) * 100)).toBe(73)
+    expect(Math.round(((prescricoes?.value ?? 0) / (utilizadas?.value ?? 1)) * 100)).toBe(48)
+  })
+
+  it('bloqueia por ruptura apontando o diagnóstico do HUB que originou', () => {
+    expect(STOCKOUT_BLOCK.territories).toBe(3)
+    expect(STOCKOUT_BLOCK.region).toBe('Nordeste')
+    expect(STOCKOUT_BLOCK.principle).toContain('Não estimular demanda')
+
+    const origem = DIAGNOSTICS.find((diagnostic) => diagnostic.id === 'ruptura-ne')
+    expect(STOCKOUT_BLOCK.diagnosticFinding).toBe(origem?.finding)
+    expect(STOCKOUT_BLOCK.attestation).toBe(origem?.attestation)
+  })
+
+  it('leva o bloqueio a uma rota do HUB que existe', () => {
+    const destino = ROUTES.find((route) => route.path === STOCKOUT_BLOCK.sourceRoute)
+    expect(destino).toBeDefined()
+    expect(destino?.product).toBe('hub')
+    expect(resolveTheme(STOCKOUT_BLOCK.sourceRoute)).toBe('hub')
+  })
+
+  it('mantém as duas campanhas do seletor, com Skincare ainda sem plano', () => {
+    expect(CAMPAIGNS.map((campaign) => campaign.name)).toEqual([
+      'Losartana Plus',
+      'Hydraserum FPS',
+    ])
+    expect(CAMPAIGNS[0]?.planned).toBe(true)
+    expect(CAMPAIGNS[1]?.planned).toBe(false)
+    expect(CAMPAIGNS[1]?.businessUnit).toBe('Skincare')
+  })
+
+  it('aponta o link de amostras do GTM para o otimizador', () => {
+    expect(SAMPLE_ALLOCATION_ROUTE).toBe('/ag/otimizador')
+    expect(ROUTES.some((route) => route.path === SAMPLE_ALLOCATION_ROUTE)).toBe(true)
+  })
+
+  it('mapeia as três rotas do AG com os módulos da seção 7', () => {
+    const ag = ROUTES.filter((route) => route.product === 'ag')
+    expect(ag.map((route) => route.badge)).toEqual(['AG 4.1', 'AG 4.4', 'AG 4.7'])
+    for (const route of ag) expect(resolveTheme(route.path)).toBe('ag')
+  })
+})
+
+describe('P9 — AG conversão, incrementalidade e cockpit', () => {
+  it('isola o efeito da amostra pela diferença entre os braços', () => {
+    const teste = EXPERIMENT_ARMS[0]
+    const controle = EXPERIMENT_ARMS[1]
+    expect(teste?.doctors).toBe(controle?.doctors)
+    expect(INCREMENTAL_PER_DOCTOR).toBeCloseTo(8.7, 1)
+    expect(INCREMENTAL_LIFT_PERCENT).toBeGreaterThan(0)
+    expect(BASELINE_SHARE_PERCENT).toBeGreaterThan(0)
+    expect(BASELINE_SHARE_PERCENT).toBeLessThan(100)
+  })
+
+  it('encadeia a conversão a partir dos passos canônicos', () => {
+    const ids = CONVERSION_CHAIN.map((step) => step.id)
+    expect(ids).toEqual(['samples', 'visits', 'used', 'prescriptions', 'sellout'])
+    expect(CONVERSION_CHAIN[0]?.value).toBe(98_750)
+    expect(CONVERSION_CHAIN.at(-1)?.value).toBe(24_150)
+  })
+
+  it('deriva o custo por médico ativado do custo canônico da campanha', () => {
+    const custo = COST_METRICS.find((metric) => metric.id === 'campaign-cost')?.value
+    const porAtivado = COST_METRICS.find((metric) => metric.id === 'cost-per-activated')?.value
+    expect(custo).toBe(247_875)
+    expect(porAtivado).toBeCloseTo(247_875 / ACTIVATED_DOCTORS, 2)
+  })
+
+  it('satura: a conversão marginal cai conforme o volume por médico sobe', () => {
+    for (let index = 1; index < SATURATION_CURVE.length; index += 1) {
+      const anterior = SATURATION_CURVE[index - 1]
+      const atual = SATURATION_CURVE[index]
+      expect(atual?.cardiology).toBeGreaterThan(anterior?.cardiology ?? 0)
+      if (index > 1) {
+        const ganhoAnterior =
+          (anterior?.cardiology ?? 0) - (SATURATION_CURVE[index - 2]?.cardiology ?? 0)
+        const ganhoAtual = (atual?.cardiology ?? 0) - (anterior?.cardiology ?? 0)
+        expect(ganhoAtual).toBeLessThan(ganhoAnterior)
+      }
+    }
+  })
+
+  it('reproduz a campanha canônica no cockpit sem redigitar os números', () => {
+    const losartana = CAMPAIGN_ROWS.find((row) => row.id === 'losartana-plus')
+    expect(losartana?.samples).toBe(98_750)
+    expect(losartana?.costBrl).toBe(247_875)
+    expect(losartana?.coveragePercent).toBe(78)
+    expect(losartana?.expectedUnits).toBe(24_150)
+  })
+
+  it('soma a verba por BU e mede o comprometido', () => {
+    expect(TOTAL_BUDGET_BRL).toBe(
+      BUSINESS_UNITS.reduce((sum, unit) => sum + unit.budgetBrl, 0),
+    )
+    expect(TOTAL_COMMITTED_BRL).toBeLessThan(TOTAL_BUDGET_BRL)
+    expect(ANNUAL_SAMPLE_BUDGET_BRL).toBe(700_000_000)
+    expect(TOTAL_BUDGET_BRL).toBe(ANNUAL_SAMPLE_BUDGET_BRL)
+  })
+
+  it('contabiliza perda por vencimento, inclusive a retida por bloqueio', () => {
+    expect(EXPIRY_LOSSES.length).toBeGreaterThan(0)
+    expect(TOTAL_EXPIRY_UNITS).toBe(
+      EXPIRY_LOSSES.reduce((sum, loss) => sum + loss.units, 0),
+    )
+    expect(EXPIRY_LOSSES.some((loss) => loss.reason.includes('bloqueio'))).toBe(true)
   })
 })
 

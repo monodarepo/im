@@ -324,14 +324,14 @@ export function doctorTotals(scope: RegionScope): DoctorTotals {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Os três primeiros médicos são canônicos da seção 10.4: nome, especialidade  */
-/* e faixa de potencial vêm do ESCOPO, e a última visita de Alencar e Vieira   */
-/* também. São os mesmos que abrem o Next Best Action do GTM.                  */
+/* Os cinco médicos são canônicos da seção 10.4: nome, especialidade e faixa   */
+/* de potencial vêm do ESCOPO, assim como a última visita de Alencar e Vieira. */
+/* São os mesmos que abrem o Next Best Action do GTM e a recomendação por      */
+/* médico do Otimizador de Alocação do AG.                                     */
 /*                                                                             */
-/* NOTA: não consta do ESCOPO — os dois últimos médicos, e a UF dos três       */
-/* canônicos. Nomes fictícios, sem correspondência com profissionais reais.    */
-/* Alencar é cardiologista no Rio de Janeiro para a lista conversar com a      */
-/* oportunidade canônica D-2026-0003.                                          */
+/* NOTA: não consta do ESCOPO — a UF de cada médico. Alencar é cardiologista   */
+/* no Rio de Janeiro para a lista conversar com a oportunidade canônica        */
+/* D-2026-0003; os demais ficam no Sudeste, onde corre a campanha do AG.       */
 /* -------------------------------------------------------------------------- */
 
 /** Faixa de potencial do médico, como o ESCOPO a declara. */
@@ -403,19 +403,19 @@ const DOCTOR_SEEDS: readonly DoctorSeed[] = [
   },
   {
     id: 'MD-004',
-    name: 'Dra. Luciana Peixoto',
-    specialty: 'pediatria',
-    uf: 'RS',
+    name: 'Dra. Juliana Costa',
+    specialty: 'clinica-geral',
+    uf: 'SP',
     potentialTier: 'medium',
-    canonical: false,
+    canonical: true,
   },
   {
     id: 'MD-005',
-    name: 'Dr. Anselmo Tavares',
-    specialty: 'ginecologia',
-    uf: 'PE',
-    potentialTier: 'low',
-    canonical: false,
+    name: 'Dr. Felipe Nunes',
+    specialty: 'cardiologia',
+    uf: 'RJ',
+    potentialTier: 'high',
+    canonical: true,
   },
 ]
 
