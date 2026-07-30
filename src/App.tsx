@@ -3,7 +3,15 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { ROUTES } from './routes/registry'
 import { DecisionCentral } from './screens/DecisionCentral'
 import { DecisionDetail } from './screens/DecisionDetail'
+import { CompetitivenessIndex } from './screens/rgm/CompetitivenessIndex'
+import { ElasticitySimulator } from './screens/rgm/ElasticitySimulator'
+import { GenericsWarRoom } from './screens/rgm/GenericsWarRoom'
+import { GrossToNet } from './screens/rgm/GrossToNet'
+import { PortfolioArchitecture } from './screens/rgm/PortfolioArchitecture'
+import { PriceGovernance } from './screens/rgm/PriceGovernance'
 import { PricingCockpit } from './screens/rgm/PricingCockpit'
+import { PromotionMonitor } from './screens/rgm/PromotionMonitor'
+import { Reports } from './screens/rgm/Reports'
 import { ScenarioSimulator } from './screens/rgm/ScenarioSimulator'
 import { CompetitiveIntel } from './screens/hub/CompetitiveIntel'
 import { Customer360 } from './screens/hub/Customer360'
@@ -25,7 +33,15 @@ import { ScreenPlaceholder } from './shell/ScreenPlaceholder'
 const SCREENS: Record<string, ReactElement> = {
   '/decisoes': <DecisionCentral />,
   '/rgm': <PricingCockpit />,
+  '/rgm/competitividade': <CompetitivenessIndex />,
+  '/rgm/elasticidade': <ElasticitySimulator />,
   '/rgm/cenarios': <ScenarioSimulator />,
+  '/rgm/gross-to-net': <GrossToNet />,
+  '/rgm/portfolio': <PortfolioArchitecture />,
+  '/rgm/governanca': <PriceGovernance />,
+  '/rgm/promocoes': <PromotionMonitor />,
+  '/rgm/war-room': <GenericsWarRoom />,
+  '/rgm/relatorios': <Reports />,
   '/hub': <MarketOverview />,
   '/hub/pulse': <MarketPulse />,
   '/hub/produto/:skuId': <Product360 />,

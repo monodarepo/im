@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { DataBadge } from '../../components/DataBadge'
 import { KpiCard } from '../../components/KpiCard'
 import { Panel } from '../../components/Panel'
+import { PerimeterNote } from '../../components/PerimeterNote'
 import { StateChip } from '../../components/StateChip'
 import { formatDecimal, formatInteger, formatPercent } from '../../domain/format'
 import { formatMoney } from '../../domain/money'
@@ -65,9 +66,10 @@ export function PricingCockpit() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          label="Captura potencial"
+          label={'Captura potencial'}
           value={formatMoney(TOTAL_CAPTURE_BRL)}
           attestation={PRICING_ATTESTATION}
+          perimeter
         />
         <KpiCard
           label="Linhas fora do corredor"
@@ -200,6 +202,8 @@ export function PricingCockpit() {
         {formatPercent(PRICE_CORRIDOR.ceiling, 0)} de preço relativo. Fora dele, o preço vira
         exceção com dono.
       </p>
+
+      <PerimeterNote />
     </div>
   )
 }

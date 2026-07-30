@@ -14,6 +14,7 @@ import {
 import { DataBadge } from '../../components/DataBadge'
 import { FutureButton } from '../../components/FutureButton'
 import { Panel } from '../../components/Panel'
+import { PerimeterMark, PerimeterNote } from '../../components/PerimeterNote'
 import { SemanticDelta } from '../../components/SemanticDelta'
 import { StateChip } from '../../components/StateChip'
 import { ConfidenceMeter } from '../../components/ConfidenceMeter'
@@ -387,7 +388,15 @@ export function ScenarioSimulator() {
             footer={<DataBadge attestation={SCENARIO_ATTESTATION} />}
           >
             <div className="grid gap-4 sm:grid-cols-4">
-              <Impact label="Receita líquida" value={formatMoneyDelta(RECOMMENDED_IMPACT.netRevenueBrl)} />
+              <Impact
+                label="Receita líquida"
+                value={
+                  <>
+                    {formatMoneyDelta(RECOMMENDED_IMPACT.netRevenueBrl)}
+                    <PerimeterMark />
+                  </>
+                }
+              />
               <Impact
                 label="Volume"
                 value={`+${formatInteger(RECOMMENDED_IMPACT.volume)} unid.`}
@@ -461,6 +470,8 @@ export function ScenarioSimulator() {
           </span>
         </div>
       </Panel>
+
+      <PerimeterNote />
     </div>
   )
 }

@@ -154,6 +154,27 @@ import {
   PRICE_LINES,
 } from './pricing'
 import { useDecisionWorkflow } from '../state/decisionWorkflowStore'
+import {
+  COMMERCIAL_DISCOUNT_BRL,
+  CUTS,
+  GROSS_REVENUE_BRL,
+  GROSS_TO_NET,
+  LEAKAGES,
+  NET_REVENUE_BRL,
+  TOTAL_DEDUCTIONS_BRL,
+  TOTAL_LEAKAGE_BRL,
+} from './grossToNet'
+import {
+  ADHERENCE_PERCENT,
+  daysSincePublication,
+  DISTRIBUTORS,
+  DISTRIBUTORS_OFF_TRACK,
+  DISTRIBUTORS_ON_TIME,
+  GUARDRAILS,
+  isOverSla,
+  STAGES,
+  type Distributor,
+} from './governance'
 import { createRandom, MOCK_SEED } from './random'
 import { findForbiddenTerms, findNonDeterministicCode, type SourceFile } from './validateMock'
 
@@ -497,6 +518,29 @@ describe('roteamento e identidade de cor', () => {
     for (const route of hub) {
       expect(route.path.startsWith('/hub')).toBe(true)
       expect(resolveTheme(route.navPath ?? route.path)).toBe('hub')
+    }
+  })
+
+  it('mapeia os dez módulos do RGM, numerados de 3.1 a 3.10', () => {
+    const rgm = ROUTES.filter((route) => route.product === 'rgm')
+    expect(rgm).toHaveLength(10)
+
+    expect(rgm.map((route) => route.badge)).toEqual([
+      'RGM 3.1',
+      'RGM 3.2',
+      'RGM 3.3',
+      'RGM 3.4',
+      'RGM 3.5',
+      'RGM 3.6',
+      'RGM 3.7',
+      'RGM 3.8',
+      'RGM 3.9',
+      'RGM 3.10',
+    ])
+
+    for (const route of rgm) {
+      expect(route.path.startsWith('/rgm')).toBe(true)
+      expect(resolveTheme(route.navPath ?? route.path)).toBe('rgm')
     }
   })
 
@@ -1326,6 +1370,102 @@ describe('cockpit de preço (3.1)', () => {
     const captures = MOLECULE_CAPTURE.map((item) => item.potentialCaptureBrl)
     expect([...captures].sort((a, b) => b - a)).toEqual(captures)
     expect(MOLECULE_CAPTURE[0]?.molecule).toBe('Dipirona')
+  })
+})
+
+describe('P6 — perímetro e telas restantes do RGM', () => {
+  it('põe a nota de perímetro em toda tela do RGM', () => {
+    const screens = loadSources().filter((file) => file.path.startsWith('screens/rgm/'))
+    expect(screens).toHaveLength(10)
+
+    const semNota = screens
+      .filter((file) => !file.text.includes('PerimeterNote'))
+      .map((file) => file.path)
+    expect(semNota).toEqual([])
+  })
+
+  it('fecha a cascata gross-to-net sem sobra', () => {
+    expect(COMMERCIAL_DISCOUNT_BRL).toBe(400_000_000)
+    expect(GROSS_REVENUE_BRL + TOTAL_DEDUCTIONS_BRL).toBe(NET_REVENUE_BRL)
+    expect(TOTAL_DEDUCTIONS_BRL).toBeLessThan(0)
+
+    const legs = GROSS_TO_NET.filter((leg) => leg.kind === 'deduction')
+    expect(legs).toHaveLength(6)
+    expect(legs.reduce((sum, leg) => sum + leg.amountBrl, 0)).toBe(TOTAL_DEDUCTIONS_BRL)
+    expect(legs.every((leg) => leg.amountBrl < 0)).toBe(true)
+  })
+
+  it('mantém cada corte somando o mesmo bruto e o mesmo líquido', () => {
+    for (const cut of ['product', 'customer', 'channel'] as const) {
+      const rows = CUTS[cut]
+      expect(rows.reduce((sum, row) => sum + row.grossBrl, 0)).toBe(GROSS_REVENUE_BRL)
+      expect(rows.reduce((sum, row) => sum + row.netBrl, 0)).toBe(NET_REVENUE_BRL)
+      expect(rows.reduce((sum, row) => sum + row.leakageBrl, 0)).toBe(TOTAL_LEAKAGE_BRL)
+    }
+  })
+
+  it('faz a conversão variar entre as linhas de cada corte', () => {
+    for (const cut of ['product', 'customer', 'channel'] as const) {
+      const conversions = CUTS[cut].map((row) => Math.round((row.netBrl / row.grossBrl) * 1000))
+      expect(new Set(conversions).size).toBe(conversions.length)
+    }
+
+    const canal = CUTS.channel
+    const independentes = canal[0]
+    const atacado = canal[3]
+    expect((independentes?.netBrl ?? 0) / (independentes?.grossBrl ?? 1)).toBeGreaterThan(
+      (atacado?.netBrl ?? 0) / (atacado?.grossBrl ?? 1),
+    )
+  })
+
+  it('aponta vazamento sempre dentro de um degrau existente', () => {
+    const legIds = new Set(GROSS_TO_NET.map((leg) => leg.id))
+    for (const leakage of LEAKAGES) {
+      expect(legIds.has(leakage.legId)).toBe(true)
+      expect(leakage.amountBrl).toBeGreaterThan(0)
+    }
+    expect(TOTAL_LEAKAGE_BRL).toBeLessThan(Math.abs(TOTAL_DEDUCTIONS_BRL))
+  })
+
+  it('percorre os cinco estágios da governança em ordem', () => {
+    expect(STAGES).toHaveLength(5)
+    expect(STAGES.map((stage) => stage.order)).toEqual([1, 2, 3, 4, 5])
+    expect(STAGES.map((stage) => stage.id)).toEqual([
+      'recommendation',
+      'authority_approval',
+      'effective_date',
+      'publication',
+      'adherence',
+    ])
+    expect(STAGES[4]?.status).toBe('at_risk')
+  })
+
+  it('mostra os quatro guardrails do ESCOPO', () => {
+    expect(GUARDRAILS.map((rail) => rail.id)).toEqual([
+      'cmed',
+      'minimum_margin',
+      'commercial_policy',
+      'authority',
+    ])
+  })
+
+  it('lê atraso de distribuidor pelo SLA, não por rótulo solto', () => {
+    for (const distributor of DISTRIBUTORS) {
+      const over = isOverSla(distributor)
+      if (distributor.status === 'published') expect(over).toBe(false)
+      else expect(over).toBe(true)
+    }
+    expect(DISTRIBUTORS_OFF_TRACK).toBeGreaterThan(0)
+    expect(DISTRIBUTORS_ON_TIME + DISTRIBUTORS_OFF_TRACK).toBe(DISTRIBUTORS.length)
+    expect(ADHERENCE_PERCENT).toBeLessThan(100)
+  })
+
+  it('mede a distância entre publicação e carga sem tocar no relógio', () => {
+    const naoCarregado = DISTRIBUTORS.find((d) => d.updatedOn === null)
+    expect(naoCarregado).toBeDefined()
+    expect(daysSincePublication(naoCarregado as Distributor)).toBeGreaterThan(
+      naoCarregado?.slaDays ?? 0,
+    )
   })
 })
 

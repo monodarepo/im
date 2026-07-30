@@ -1,5 +1,6 @@
 import { describeAttestation, type Attestation } from '../domain/attestation'
 import { DataBadge } from './DataBadge'
+import { PerimeterMark } from './PerimeterNote'
 import { SemanticDelta, type DeltaUnit } from './SemanticDelta'
 
 type KpiCardProps = {
@@ -12,6 +13,8 @@ type KpiCardProps = {
   comparison?: string
   attestation: Attestation
   size?: 'md' | 'lg'
+  /** Marca o valor com o asterisco de perímetro em validação (RGM, seção 6). */
+  perimeter?: boolean
 }
 
 /**
@@ -28,6 +31,7 @@ export function KpiCard({
   comparison,
   attestation,
   size = 'md',
+  perimeter = false,
 }: KpiCardProps) {
   return (
     <article className="rounded-card border border-surface-border bg-surface-card p-5">
@@ -38,6 +42,7 @@ export function KpiCard({
         title={describeAttestation(attestation)}
       >
         {value}
+        {perimeter ? <PerimeterMark /> : null}
       </p>
 
       {delta !== undefined ? (
