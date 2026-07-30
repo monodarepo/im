@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
+import { HyperaLogo } from '../components/HyperaLogo'
 import { PRODUCTS } from '../design/tokens'
 import { CURRENT_PERSONA } from '../domain/persona'
 import {
@@ -34,8 +35,8 @@ export function Sidebar() {
   return (
     <aside className="flex w-sidebar shrink-0 flex-col bg-slate-900 text-slate-100">
       <div className="px-4 pb-4 pt-5">
-        <p className="text-base font-semibold tracking-tight text-white">Hypera</p>
-        <p className="mt-0.5 text-delta-lg text-slate-400">
+        <HyperaLogo on="dark" />
+        <p className="mt-2 text-delta-lg text-slate-400">
           {product ? product.name : 'Plataforma de Inteligência de Mercado e Crescimento'}
         </p>
       </div>
