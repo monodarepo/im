@@ -8,6 +8,7 @@ import { PRODUCTS } from '../design/tokens'
 import { findDecision } from '../mock/decisions'
 import { OPPORTUNITIES } from '../mock/opportunities'
 import { useDecisions } from '../state/decisionsStore'
+import { useRadarDecisions } from '../state/radarDecisionsStore'
 
 /**
  * Detalhe da Decisão.
@@ -17,7 +18,8 @@ import { useDecisions } from '../state/decisionsStore'
  */
 export function DecisionDetail() {
   const { decisionId = '' } = useParams()
-  const decision = findDecision(decisionId)
+  const createdFromRadar = useRadarDecisions((state) => state.findCreated(decisionId))
+  const decision = findDecision(decisionId) ?? createdFromRadar
   const origin = OPPORTUNITIES.find((opportunity) => opportunity.decisionId === decisionId)
   const links = useDecisions((state) => state.links).filter(
     (link) => link.decisionId === decisionId,

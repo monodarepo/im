@@ -2,10 +2,16 @@ import type { ReactElement } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ROUTES } from './routes/registry'
 import { DecisionDetail } from './screens/DecisionDetail'
+import { CompetitiveIntel } from './screens/hub/CompetitiveIntel'
+import { Customer360 } from './screens/hub/Customer360'
 import { DataQuality } from './screens/hub/DataQuality'
+import { Doctor360 } from './screens/hub/Doctor360'
 import { MarketOverview } from './screens/hub/MarketOverview'
+import { MarketPulse } from './screens/hub/MarketPulse'
+import { OpportunityRadar } from './screens/hub/OpportunityRadar'
 import { Product360 } from './screens/hub/Product360'
 import { RootCause } from './screens/hub/RootCause'
+import { Territory360 } from './screens/hub/Territory360'
 import { AppShell } from './shell/AppShell'
 import { ScreenPlaceholder } from './shell/ScreenPlaceholder'
 
@@ -15,7 +21,13 @@ import { ScreenPlaceholder } from './shell/ScreenPlaceholder'
  */
 const SCREENS: Record<string, ReactElement> = {
   '/hub': <MarketOverview />,
+  '/hub/pulse': <MarketPulse />,
   '/hub/produto/:skuId': <Product360 />,
+  '/hub/cliente': <Customer360 />,
+  '/hub/territorio': <Territory360 />,
+  '/hub/medico': <Doctor360 />,
+  '/hub/radar': <OpportunityRadar />,
+  '/hub/competitiva': <CompetitiveIntel />,
   '/hub/causa-raiz': <RootCause />,
   '/hub/qualidade': <DataQuality />,
 }

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { create } from 'zustand'
 import { ConfidenceMeter } from '../../components/ConfidenceMeter'
 import { DataBadge } from '../../components/DataBadge'
 import { FutureButton } from '../../components/FutureButton'
@@ -10,14 +9,13 @@ import { StateChip } from '../../components/StateChip'
 import type { SemanticTone } from '../../design/tokens'
 import { formatInteger } from '../../domain/format'
 import { formatMoney, formatMoneyFull } from '../../domain/money'
-import { formatRelative, HOJE, type IsoDate } from '../../domain/today'
+import { formatRelative } from '../../domain/today'
 import {
   EFFORT_LABEL,
   INACTION_ATTESTATION,
   INACTION_HORIZON_DAYS,
   INACTION_PARTS,
   INACTION_TOTAL_BRL,
-  nextDecisionId,
   RADAR_ATTESTATION,
   RADAR_AXES,
   RADAR_CANDIDATE_COUNT,
@@ -31,51 +29,7 @@ import {
   type RadarEntry,
   type Urgency,
 } from '../../mock/radar'
-import { useDecisions } from '../../state/decisionsStore'
-
-/**
- * Decisões criadas a partir do radar.
- *
- * Transformar uma oportunidade em Decisão não abre tela nova: grava o vínculo
- * entre a linha do radar e o identificador da decisão, e o mesmo clique
- * registra o encaminhamento no objeto de Decisão da plataforma.
- *
- * O store vive aqui só enquanto a fiação da tela não acontece — o destino é
- * `src/state/radarDecisionsStore.ts`, ao lado dos demais.
- */
-
-export type RadarDecision = {
-  readonly radarId: string
-  readonly decisionId: string
-  readonly createdOn: IsoDate
-}
-
-type RadarDecisionsState = {
-  readonly created: readonly RadarDecision[]
-  /** Cria a decisão da oportunidade e devolve o identificador; idempotente. */
-  convert: (radarId: string) => string
-  decisionOf: (radarId: string) => RadarDecision | undefined
-  reset: () => void
-}
-
-export const useRadarDecisions = create<RadarDecisionsState>((set, get) => ({
-  created: [],
-
-  convert: (radarId) => {
-    const existing = get().created.find((item) => item.radarId === radarId)
-    if (existing) return existing.decisionId
-
-    const decisionId = nextDecisionId(get().created.length)
-    set((state) => ({
-      created: [...state.created, { radarId, decisionId, createdOn: HOJE }],
-    }))
-    return decisionId
-  },
-
-  decisionOf: (radarId) => get().created.find((item) => item.radarId === radarId),
-
-  reset: () => set({ created: [] }),
-}))
+import { useRadarDecisions } from '../../state/radarDecisionsStore'
 
 const URGENCY_TONE: Record<Urgency, SemanticTone> = {
   critical: 'negative',
@@ -149,7 +103,6 @@ function DecisionCell({ entry }: { entry: RadarEntry }) {
     state.created.find((item) => item.radarId === entry.id),
   )
   const convert = useRadarDecisions((state) => state.convert)
-  const forward = useDecisions((state) => state.forward)
 
   if (entry.decisionId) {
     return (
@@ -170,9 +123,13 @@ function DecisionCell({ entry }: { entry: RadarEntry }) {
     return (
       <div className="flex flex-col items-end gap-1">
         <StateChip label="Decisão criada" tone="positive" />
-        <span className="text-delta font-medium tabular-nums text-neutral">
-          {created.decisionId} · {formatRelative(created.createdOn)}
-        </span>
+        <Link
+          to={`/decisoes/${created.id}`}
+          className="text-delta font-medium tabular-nums underline"
+          style={{ color: 'var(--product-accent)' }}
+        >
+          {created.id} · {formatRelative(created.createdOn)} →
+        </Link>
       </div>
     )
   }
@@ -180,7 +137,7 @@ function DecisionCell({ entry }: { entry: RadarEntry }) {
   return (
     <button
       type="button"
-      onClick={() => forward(convert(entry.id), 'hub', entry.title)}
+      onClick={() => convert(entry.id, entry.title, entry.impactBrl)}
       className="rounded-control px-3 py-1.5 text-delta-lg font-medium text-white transition-opacity hover:opacity-90"
       style={{ backgroundColor: 'var(--product-accent)' }}
     >

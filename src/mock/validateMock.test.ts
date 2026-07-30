@@ -78,6 +78,58 @@ import {
 import { DATA_EXCEPTIONS, DEGRADED_ATTESTATIONS, RELIABILITY_SERIES, SOURCE_HEALTH } from './dataQuality'
 import { useDecisions } from '../state/decisionsStore'
 import { useExceptions } from '../state/exceptionsStore'
+import { useRadarDecisions } from '../state/radarDecisionsStore'
+import {
+  COVERAGE_ESTIMATED_ATTESTATION,
+  COVERAGE_SEGMENTS,
+  ESTIMATED_OUTLETS,
+  FORECAST_ATTESTATION,
+  FORECAST_HIGH_BRL,
+  FORECAST_LOW_BRL,
+  FORECAST_TOTAL_BRL,
+  OBSERVED_OUTLETS,
+  PULSE_SERIES,
+  UNIVERSE_OUTLETS,
+} from './pulse'
+import {
+  ALERT_STOCKOUT_PERCENT,
+  CHANNEL_STOCK_CHANGE_BRL,
+  COVERAGE_GAP_DAYS,
+  DC_TARGET_DAYS,
+  DC_TIER,
+  EXPECTED_SELL_OUT_BRL,
+  GAP_CAUSES,
+  NATIONAL_STOCKOUT_PERCENT,
+  RECONCILIATION_GAP_BRL,
+  SELL_IN_BRL,
+  SELL_OUT_BRL,
+  STORE_TARGET_DAYS,
+  STORE_TIER,
+} from './customers'
+import {
+  MARKET_POTENTIAL_BRL,
+  MEDIAN_UF_POTENTIAL_BRL,
+  NATIONAL_PRESENCE_PERCENT,
+  TERRITORY_PROFILES,
+  WHITE_SPACES,
+} from './territories'
+import { DOCTOR_COUNT, DOCTOR_COVERAGE_OPPORTUNITY, DOCTORS, POTENTIAL_PER_UNCOVERED_DOCTOR_BRL } from './doctors'
+import {
+  INACTION_PARTS,
+  RADAR_AXES,
+  RADAR_CANDIDATE_COUNT,
+  RADAR_CANONICAL_COUNT,
+  RADAR_ENTRIES,
+  RADAR_PRIORITIZED_BRL,
+  sortByAxis,
+} from './radar'
+import {
+  COMPETITIVE_MOVES,
+  EMPTY_PRICE_FILTER,
+  MOLECULE_TIMELINES,
+  PRICE_CELLS,
+  summarizePrices,
+} from './competitive'
 import { createRandom, MOCK_SEED } from './random'
 import { findForbiddenTerms, findNonDeterministicCode, type SourceFile } from './validateMock'
 
@@ -900,6 +952,160 @@ describe('qualidade dos dados', () => {
     expect(first!.scanntech).toBeGreaterThan(90)
     expect(last!.scanntech).toBeLessThan(75)
     expect(last!.neogrid).toBeGreaterThan(90)
+  })
+})
+
+describe('P4 — telas restantes do HUB', () => {
+  it('pulse separa observado de estimado sobre o universo declarado', () => {
+    expect(OBSERVED_OUTLETS).toBe(15_000)
+    expect(UNIVERSE_OUTLETS).toBe(70_000)
+    expect(OBSERVED_OUTLETS + ESTIMATED_OUTLETS).toBe(UNIVERSE_OUTLETS)
+    expect(COVERAGE_SEGMENTS).toHaveLength(2)
+    expect(COVERAGE_SEGMENTS.reduce((sum, s) => sum + s.outlets, 0)).toBe(UNIVERSE_OUTLETS)
+  })
+
+  it('pulse rebaixa o método da parcela extrapolada e da projeção', () => {
+    expect(COVERAGE_ESTIMATED_ATTESTATION.method).toBe('extrapolated')
+    expect(FORECAST_ATTESTATION.method).toBe('extrapolated')
+    expect(FORECAST_ATTESTATION.confidence).not.toBe('high')
+  })
+
+  it('pulse fecha a projeção no total derivado do crescimento canônico', () => {
+    const projected = PULSE_SERIES.filter((point) => point.observed === null).reduce(
+      (sum, point) => sum + (point.median ?? 0),
+      0,
+    )
+    expect(projected).toBe(FORECAST_TOTAL_BRL)
+    expect(FORECAST_LOW_BRL).toBeLessThan(FORECAST_TOTAL_BRL)
+    expect(FORECAST_HIGH_BRL).toBeGreaterThan(FORECAST_TOTAL_BRL)
+  })
+
+  it('cliente fecha a reconciliação sem sobra', () => {
+    expect(SELL_OUT_BRL).toBe(256_400_000)
+    expect(EXPECTED_SELL_OUT_BRL).toBe(SELL_IN_BRL - CHANNEL_STOCK_CHANGE_BRL)
+    expect(RECONCILIATION_GAP_BRL).toBe(SELL_OUT_BRL - EXPECTED_SELL_OUT_BRL)
+
+    const causes = GAP_CAUSES.reduce((sum, cause) => sum + cause.amountBrl, 0)
+    expect(causes).toBe(Math.abs(RECONCILIATION_GAP_BRL))
+  })
+
+  it('cliente mostra CD confortável contra ponta em ruptura', () => {
+    expect(DC_TIER.coverageDays).toBeGreaterThan(DC_TARGET_DAYS.min)
+    expect(STORE_TIER.coverageDays).toBeLessThan(STORE_TARGET_DAYS.min)
+    expect(COVERAGE_GAP_DAYS).toBeGreaterThan(0)
+    expect(ALERT_STOCKOUT_PERCENT).toBeGreaterThan(NATIONAL_STOCKOUT_PERCENT)
+  })
+
+  it('território deriva o potencial de sell-out sobre market share', () => {
+    expect(MARKET_POTENTIAL_BRL).toBe(Math.round(256_400_000 / (18.7 / 100)))
+    expect(TERRITORY_PROFILES).toHaveLength(27)
+    const total = TERRITORY_PROFILES.reduce((sum, p) => sum + p.potentialBrl, 0)
+    expect(total).toBe(MARKET_POTENTIAL_BRL)
+  })
+
+  it('território ancora a presença média na distribuição numérica canônica', () => {
+    const mean =
+      TERRITORY_PROFILES.reduce((sum, p) => sum + p.presencePercent, 0) / TERRITORY_PROFILES.length
+    expect(Number(mean.toFixed(1))).toBe(76.2)
+    expect(NATIONAL_PRESENCE_PERCENT).toBe(76.2)
+  })
+
+  it('território só marca white space com potencial acima da mediana', () => {
+    for (const space of WHITE_SPACES) {
+      expect(space.potentialBrl).toBeGreaterThan(MEDIAN_UF_POTENTIAL_BRL)
+      expect(space.presencePercent).toBeLessThan(NATIONAL_PRESENCE_PERCENT)
+    }
+  })
+
+  it('médico traz os cinco da lista com um cardiologista no RJ', () => {
+    expect(DOCTORS).toHaveLength(5)
+    expect(DOCTOR_COUNT).toBe(5)
+    expect(new Set(DOCTORS.map((d) => d.id)).size).toBe(5)
+    expect(DOCTORS.some((d) => d.specialty === 'cardiologia' && d.uf === 'RJ')).toBe(true)
+  })
+
+  it('médico calibra o potencial para bater na oportunidade canônica', () => {
+    expect(DOCTOR_COVERAGE_OPPORTUNITY.impactBrl).toBe(2_700_000)
+    expect(POTENTIAL_PER_UNCOVERED_DOCTOR_BRL).toBeGreaterThan(0)
+  })
+
+  it('radar mantém as cinco canônicas no topo, sem candidata furando a fila', () => {
+    expect(RADAR_CANONICAL_COUNT).toBe(5)
+    expect(RADAR_PRIORITIZED_BRL).toBe(14_200_000)
+
+    const canonical = RADAR_ENTRIES.filter((entry) => entry.canonical)
+    const candidates = RADAR_ENTRIES.filter((entry) => !entry.canonical)
+    expect(canonical).toHaveLength(5)
+    expect(candidates).toHaveLength(RADAR_CANDIDATE_COUNT)
+
+    const smallestCanonical = Math.min(...canonical.map((entry) => entry.impactBrl))
+    for (const candidate of candidates) {
+      expect(candidate.impactBrl).toBeLessThan(smallestCanonical)
+      expect(candidate.decisionId).toBeNull()
+    }
+  })
+
+  it('radar decompõe o custo da não ação fechando no total', () => {
+    for (const entry of RADAR_ENTRIES) {
+      const parts = INACTION_PARTS.reduce((sum, part) => sum + entry.inactionCost[part.id], 0)
+      expect(parts).toBe(entry.inactionCost.totalBrl)
+      expect(entry.inactionCost.totalBrl).toBeLessThan(entry.impactBrl)
+    }
+  })
+
+  it('radar ordena por cada eixo sem perder linha', () => {
+    for (const axis of RADAR_AXES) {
+      expect(sortByAxis(RADAR_ENTRIES, axis.id, true)).toHaveLength(RADAR_ENTRIES.length)
+    }
+  })
+
+  it('competitiva fecha a malha de preço no IPR canônico', () => {
+    expect(PRICE_CELLS).toHaveLength(72)
+    const mean = PRICE_CELLS.reduce((sum, cell) => sum + cell.ipr, 0) / PRICE_CELLS.length
+    expect(Number(mean.toFixed(1))).toBe(98.6)
+    expect(summarizePrices(EMPTY_PRICE_FILTER).ipr).toBeCloseTo(98.6, 1)
+  })
+
+  it('competitiva dá número só ao movimento canônico', () => {
+    const canonical = COMPETITIVE_MOVES.filter((move) => move.impactPp !== null)
+    expect(canonical).toHaveLength(1)
+    expect(canonical[0]?.impactPp).toBe(-1.3)
+    expect(canonical[0]?.decisionId).toBe('D-2026-0002')
+    expect(MOLECULE_TIMELINES.length).toBeGreaterThan(0)
+  })
+})
+
+describe('transformar oportunidade em Decisão', () => {
+  beforeEach(() => useRadarDecisions.setState({ created: [] }))
+
+  it('mina o próximo id da série e devolve o mesmo em nova chamada', () => {
+    const { convert } = useRadarDecisions.getState()
+    const first = convert('cand-1', 'Oportunidade em triagem', 900_000)
+    expect(first).toBe('D-2026-0006')
+
+    expect(convert('cand-1', 'Oportunidade em triagem', 900_000)).toBe(first)
+    expect(useRadarDecisions.getState().created).toHaveLength(1)
+  })
+
+  it('numera em sequência e não colide com as canônicas', () => {
+    const { convert } = useRadarDecisions.getState()
+    convert('cand-1', 'A', 900_000)
+    convert('cand-2', 'B', 800_000)
+
+    const ids = useRadarDecisions.getState().created.map((item) => item.id)
+    expect(ids).toEqual(['D-2026-0006', 'D-2026-0007'])
+    for (const id of ids) expect(findDecision(id)).toBeUndefined()
+  })
+
+  it('deixa a decisão criada navegável, com título e impacto', () => {
+    const { convert } = useRadarDecisions.getState()
+    const id = convert('cand-1', 'Ampliar sortimento', 900_000)
+
+    const created = useRadarDecisions.getState().findCreated(id)
+    expect(created?.title).toBe('Ampliar sortimento')
+    expect(created?.impactBrl).toBe(900_000)
+    expect(created?.createdOn).toBe(HOJE)
+    expect(created?.product).toBe('hub')
   })
 })
 
