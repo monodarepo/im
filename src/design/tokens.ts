@@ -74,6 +74,19 @@ export const PRODUCTS: Record<ProductId, ProductIdentity> = {
 export const PRODUCT_ORDER: readonly ProductId[] = ['hub', 'gtm', 'rgm', 'ag']
 
 /**
+ * A raiz e a fila de decisões não pertencem a nenhum produto: assumem o cinza
+ * institucional para que a cor não sugira um dono que a tela não tem.
+ */
+export const INSTITUTIONAL_ACCENT = '#334155'
+
+/** Identidade aplicável ao chrome: um produto ou o institucional. */
+export type ThemeId = ProductId | 'institutional'
+
+export function themeAccent(theme: ThemeId): string {
+  return theme === 'institutional' ? INSTITUTIONAL_ACCENT : PRODUCTS[theme].accent
+}
+
+/**
  * Escala de oportunidade do mapa, do menor ao maior potencial.
  *
  * Rampa sequencial de matiz única, ancorada no verde semântico no nível máximo:
@@ -120,8 +133,8 @@ export const TYPOGRAPHY = {
 } as const
 
 /** Custom properties de identidade, aplicadas no escopo do produto ativo. */
-export function productCssVariables(product: ProductId): Record<string, string> {
+export function productCssVariables(theme: ThemeId): Record<string, string> {
   return {
-    '--product-accent': PRODUCTS[product].accent,
+    '--product-accent': themeAccent(theme),
   }
 }

@@ -25,7 +25,18 @@ import {
   MINUS,
 } from '../domain/format'
 import { formatMoney, formatMoneyDelta, formatMoneyFull } from '../domain/money'
+import { ROUTES, resolveTheme, routeCoverage } from '../routes/registry'
 import {
+  activeFilters,
+  DEFAULT_PERIOD,
+  FILTER_ORDER,
+  useFilters,
+  type FilterState,
+  type MultiFilterId,
+} from '../state/filtersStore'
+import {
+  INSTITUTIONAL_ACCENT,
+  themeAccent,
   LAYOUT,
   OPPORTUNITY_LEVELS,
   OPPORTUNITY_SCALE,
@@ -324,6 +335,123 @@ describe('design tokens', () => {
     expect(css).toContain(`--radius-card: ${RADIUS.card}`)
     expect(css).toContain(`--sidebar-width: ${LAYOUT.sidebarWidth}`)
     expect(css).toContain(`--product-accent: ${PRODUCTS.hub.accent.toLowerCase()}`)
+  })
+})
+
+describe('roteamento e identidade de cor', () => {
+  it('troca a identidade conforme a rota', () => {
+    expect(resolveTheme('/hub')).toBe('hub')
+    expect(resolveTheme('/gtm')).toBe('gtm')
+    expect(resolveTheme('/rgm')).toBe('rgm')
+    expect(resolveTheme('/ag')).toBe('ag')
+  })
+
+  it('mantém raiz e fila de decisões em neutro institucional', () => {
+    expect(resolveTheme('/')).toBe('institutional')
+    expect(resolveTheme('/decisoes')).toBe('institutional')
+    expect(themeAccent('institutional')).toBe(INSTITUTIONAL_ACCENT)
+  })
+
+  it('herda a identidade do produto em subrota', () => {
+    expect(resolveTheme('/rgm/elasticidade')).toBe('rgm')
+  })
+
+  it('cai no institucional em rota desconhecida, sem herdar a cor anterior', () => {
+    expect(resolveTheme('/rota-inexistente')).toBe('institutional')
+  })
+
+  it('não repete path no registro', () => {
+    const paths = ROUTES.map((route) => route.path)
+    expect(new Set(paths).size).toBe(paths.length)
+  })
+
+  it('mantém tema e produto coerentes em cada entrada', () => {
+    for (const route of ROUTES) {
+      if (route.product === null) expect(route.theme).toBe('institutional')
+      else expect(route.theme).toBe(route.product)
+    }
+  })
+
+  it('conta o que falta da seção 12.3', () => {
+    const coverage = routeCoverage()
+    expect(coverage.expected).toBe(45)
+    expect(coverage.mapped).toBe(ROUTES.length)
+    expect(coverage.mapped + coverage.missing).toBe(coverage.expected)
+  })
+})
+
+describe('filtros globais', () => {
+  const EMPTY: Record<MultiFilterId, readonly string[]> = {
+    bu: [],
+    brand: [],
+    product: [],
+    molecule: [],
+    channel: [],
+    customer: [],
+    region: [],
+    territory: [],
+    team: [],
+    specialty: [],
+    campaign: [],
+  }
+
+  const stateWith = (selections: Partial<Record<MultiFilterId, string[]>> = {}): FilterState => ({
+    period: DEFAULT_PERIOD,
+    selections: { ...EMPTY, ...selections },
+  })
+
+  it('cobre os doze filtros da seção 2', () => {
+    expect(FILTER_ORDER).toHaveLength(12)
+    expect(FILTER_ORDER).toEqual([
+      'period',
+      'bu',
+      'brand',
+      'product',
+      'molecule',
+      'channel',
+      'customer',
+      'region',
+      'territory',
+      'team',
+      'specialty',
+      'campaign',
+    ])
+  })
+
+  it('ancora o período padrão em HOJE', () => {
+    expect(DEFAULT_PERIOD.to).toBe(HOJE)
+    expect(DEFAULT_PERIOD.from).toBe(daysAgo(90))
+  })
+
+  it('esconde o que a tela não declara em vez de desabilitar', () => {
+    const state = stateWith({ region: ['SP', 'MG'], campaign: ['C1'] })
+
+    const pills = activeFilters(state, ['period', 'region'])
+    expect(pills.map((pill) => pill.id)).toEqual(['period', 'region'])
+    expect(pills[1]?.summary).toBe('2 selecionados')
+  })
+
+  it('omite filtro declarado mas sem valor', () => {
+    expect(activeFilters(stateWith(), ['period', 'brand']).map((p) => p.id)).toEqual(['period'])
+  })
+
+  it('nomeia a seleção única', () => {
+    expect(activeFilters(stateWith({ bu: ['Genéricos'] }), ['bu'])[0]?.summary).toBe('Genéricos')
+  })
+
+  it('sobrevive à navegação: o store vive fora da árvore de rotas', () => {
+    const { toggle, clearAll } = useFilters.getState()
+
+    toggle('region', 'SP')
+    toggle('region', 'MG')
+    expect(useFilters.getState().selections.region).toEqual(['SP', 'MG'])
+
+    toggle('region', 'SP')
+    expect(useFilters.getState().selections.region).toEqual(['MG'])
+
+    clearAll()
+    expect(useFilters.getState().selections.region).toEqual([])
+    expect(useFilters.getState().period).toEqual(DEFAULT_PERIOD)
   })
 })
 
