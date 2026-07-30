@@ -3,6 +3,9 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { ROUTES } from './routes/registry'
 import { DecisionCentral } from './screens/DecisionCentral'
 import { DecisionDetail } from './screens/DecisionDetail'
+import { GtmOverview } from './screens/gtm/GtmOverview'
+import { NextBestAction } from './screens/gtm/NextBestAction'
+import { SmartRouting } from './screens/gtm/SmartRouting'
 import { CompetitivenessIndex } from './screens/rgm/CompetitivenessIndex'
 import { ElasticitySimulator } from './screens/rgm/ElasticitySimulator'
 import { GenericsWarRoom } from './screens/rgm/GenericsWarRoom'
@@ -42,6 +45,9 @@ const SCREENS: Record<string, ReactElement> = {
   '/rgm/promocoes': <PromotionMonitor />,
   '/rgm/war-room': <GenericsWarRoom />,
   '/rgm/relatorios': <Reports />,
+  '/gtm': <GtmOverview />,
+  '/gtm/nba': <NextBestAction />,
+  '/gtm/roteirizacao': <SmartRouting />,
   '/hub': <MarketOverview />,
   '/hub/pulse': <MarketPulse />,
   '/hub/produto/:skuId': <Product360 />,

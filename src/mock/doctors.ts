@@ -324,13 +324,24 @@ export function doctorTotals(scope: RegionScope): DoctorTotals {
 }
 
 /* -------------------------------------------------------------------------- */
-/* NOTA: não consta do ESCOPO — os cinco médicos canônicos da seção 10.4       */
-/* substituem esta lista quando o documento estiver disponível.                */
+/* Os três primeiros médicos são canônicos da seção 10.4: nome, especialidade  */
+/* e faixa de potencial vêm do ESCOPO, e a última visita de Alencar e Vieira   */
+/* também. São os mesmos que abrem o Next Best Action do GTM.                  */
 /*                                                                             */
-/* Nomes fictícios, sem correspondência com profissionais reais. O primeiro é  */
-/* cardiologista no Rio de Janeiro para que a lista converse com a             */
+/* NOTA: não consta do ESCOPO — os dois últimos médicos, e a UF dos três       */
+/* canônicos. Nomes fictícios, sem correspondência com profissionais reais.    */
+/* Alencar é cardiologista no Rio de Janeiro para a lista conversar com a      */
 /* oportunidade canônica D-2026-0003.                                          */
 /* -------------------------------------------------------------------------- */
+
+/** Faixa de potencial do médico, como o ESCOPO a declara. */
+export type PotentialTier = 'high' | 'medium' | 'low'
+
+export const POTENTIAL_TIER_LABEL: Record<PotentialTier, string> = {
+  high: 'Alto potencial',
+  medium: 'Médio potencial',
+  low: 'Baixo potencial',
+}
 
 export type Doctor = {
   readonly id: string
@@ -343,6 +354,9 @@ export type Doctor = {
   /** Dias desde a última visita registrada, medidos de `HOJE`. */
   readonly lastVisitDaysAgo: number
   readonly potentialBrl: number
+  readonly potentialTier: PotentialTier
+  /** `true` para os médicos fixados na seção 10.4. */
+  readonly canonical: boolean
   /** Decisão que endereça o médico, quando existe uma priorizada. */
   readonly decisionId?: string
 }
@@ -352,21 +366,57 @@ type DoctorSeed = {
   readonly name: string
   readonly specialty: SpecialtyId
   readonly uf: UfCode
+  readonly potentialTier: PotentialTier
+  readonly canonical: boolean
+  /** Sobrepõe a derivação quando o ESCOPO fixa a última visita. */
+  readonly lastVisitDaysAgo?: number
   readonly decisionId?: string
 }
 
 const DOCTOR_SEEDS: readonly DoctorSeed[] = [
   {
     id: 'MD-001',
-    name: 'Dr. Ricardo Albuquerque',
+    name: 'Dr. Ricardo Alencar',
     specialty: 'cardiologia',
     uf: 'RJ',
+    potentialTier: 'high',
+    canonical: true,
+    lastVisitDaysAgo: 21,
     decisionId: DOCTOR_COVERAGE_OPPORTUNITY.decisionId,
   },
-  { id: 'MD-002', name: 'Dra. Beatriz Nogueira', specialty: 'endocrinologia', uf: 'SP' },
-  { id: 'MD-003', name: 'Dr. Otávio Rezende', specialty: 'clinica-geral', uf: 'MG' },
-  { id: 'MD-004', name: 'Dra. Luciana Peixoto', specialty: 'pediatria', uf: 'RS' },
-  { id: 'MD-005', name: 'Dr. Anselmo Tavares', specialty: 'ginecologia', uf: 'PE' },
+  {
+    id: 'MD-002',
+    name: 'Dra. Camila Barros',
+    specialty: 'clinica-geral',
+    uf: 'SP',
+    potentialTier: 'medium',
+    canonical: true,
+  },
+  {
+    id: 'MD-003',
+    name: 'Dr. Marcelo Vieira',
+    specialty: 'cardiologia',
+    uf: 'MG',
+    potentialTier: 'high',
+    canonical: true,
+    lastVisitDaysAgo: 35,
+  },
+  {
+    id: 'MD-004',
+    name: 'Dra. Luciana Peixoto',
+    specialty: 'pediatria',
+    uf: 'RS',
+    potentialTier: 'medium',
+    canonical: false,
+  },
+  {
+    id: 'MD-005',
+    name: 'Dr. Anselmo Tavares',
+    specialty: 'ginecologia',
+    uf: 'PE',
+    potentialTier: 'low',
+    canonical: false,
+  },
 ]
 
 const DOCTOR_SEED_OFFSET = 500
@@ -377,9 +427,9 @@ export const DOCTORS: readonly Doctor[] = DOCTOR_SEEDS.map((seed, index) => {
     between(random, PRESCRIPTIONS_PER_DOCTOR_MIN, PRESCRIPTIONS_PER_DOCTOR_MAX),
   )
   const visits = Math.round(between(random, DOCTOR_VISITS_MIN, DOCTOR_VISITS_MAX))
-  const lastVisitDaysAgo = Math.round(
-    between(random, DOCTOR_LAST_VISIT_MIN_DAYS, DOCTOR_LAST_VISIT_MAX_DAYS),
-  )
+  const lastVisitDaysAgo =
+    seed.lastVisitDaysAgo ??
+    Math.round(between(random, DOCTOR_LAST_VISIT_MIN_DAYS, DOCTOR_LAST_VISIT_MAX_DAYS))
   const potentialBrl = roundTo(
     POTENTIAL_PER_UNCOVERED_DOCTOR_BRL *
       between(random, DOCTOR_POTENTIAL_MULTIPLE_MIN, DOCTOR_POTENTIAL_MULTIPLE_MAX),
@@ -396,6 +446,8 @@ export const DOCTORS: readonly Doctor[] = DOCTOR_SEEDS.map((seed, index) => {
     visits,
     lastVisitDaysAgo,
     potentialBrl,
+    potentialTier: seed.potentialTier,
+    canonical: seed.canonical,
     ...(seed.decisionId ? { decisionId: seed.decisionId } : {}),
   }
 })

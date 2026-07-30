@@ -175,6 +175,17 @@ import {
   STAGES,
   type Distributor,
 } from './governance'
+import {
+  DAY_SUMMARY,
+  doctorOf,
+  PRIORITY_ORDER,
+  PRIORITY_PINS,
+  RECOMMENDATIONS,
+  SAMPLE_ALLOCATION_ROUTE,
+  SUGGESTED_ACTIONS,
+  TEAM_PERFORMANCE,
+} from './nba'
+import { BASE_ROUTE, REPLANNED_ROUTE, ROUTE_FACTORS, TRAVEL_SAVED_MINUTES } from './routing'
 import { createRandom, MOCK_SEED } from './random'
 import { findForbiddenTerms, findNonDeterministicCode, type SourceFile } from './validateMock'
 
@@ -1466,6 +1477,134 @@ describe('P6 — perímetro e telas restantes do RGM', () => {
     expect(daysSincePublication(naoCarregado as Distributor)).toBeGreaterThan(
       naoCarregado?.slaDays ?? 0,
     )
+  })
+})
+
+describe('P7 — GTM Next Best Action e roteirização', () => {
+  it('fixa os três médicos canônicos da seção 10.4', () => {
+    const canonicos = DOCTORS.filter((doctor) => doctor.canonical)
+    expect(canonicos).toHaveLength(3)
+    expect(canonicos.map((doctor) => doctor.name)).toEqual([
+      'Dr. Ricardo Alencar',
+      'Dra. Camila Barros',
+      'Dr. Marcelo Vieira',
+    ])
+    expect(canonicos.map((doctor) => doctor.specialty)).toEqual([
+      'cardiologia',
+      'clinica-geral',
+      'cardiologia',
+    ])
+    expect(canonicos.map((doctor) => doctor.potentialTier)).toEqual(['high', 'medium', 'high'])
+  })
+
+  it('respeita a última visita fixada pelo ESCOPO', () => {
+    expect(DOCTORS.find((d) => d.id === 'MD-001')?.lastVisitDaysAgo).toBe(21)
+    expect(DOCTORS.find((d) => d.id === 'MD-003')?.lastVisitDaysAgo).toBe(35)
+  })
+
+  it('recomenda para os três primeiros, sempre com médico existente', () => {
+    expect(RECOMMENDATIONS).toHaveLength(3)
+    expect(RECOMMENDATIONS.map((r) => r.doctorId)).toEqual(['MD-001', 'MD-002', 'MD-003'])
+    for (const recommendation of RECOMMENDATIONS) {
+      expect(doctorOf(recommendation)).toBeDefined()
+      expect(recommendation.reason).toHaveLength(2)
+      expect(recommendation.action.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('termina cada card numa ação, não num indicador', () => {
+    expect(RECOMMENDATIONS.map((r) => r.action)).toEqual([
+      'Visitar e apresentar Losartana',
+      'Visitar e oferecer amostra',
+      'Visitar e apresentar nova campanha',
+    ])
+  })
+
+  it('dá a cada recomendação o racional completo das cinco perguntas', () => {
+    for (const { rationale } of RECOMMENDATIONS) {
+      for (const campo of [
+        rationale.whyDoctor,
+        rationale.whyNow,
+        rationale.evidence,
+        rationale.likelyObjection,
+        rationale.message,
+      ]) {
+        expect(campo.length).toBeGreaterThan(20)
+      }
+    }
+  })
+
+  it('traz o resumo do dia com os números da seção 10.4', () => {
+    expect(DAY_SUMMARY).toMatchObject({
+      plannedVisits: 18,
+      completedVisits: 7,
+      routeAdherencePercent: 78,
+      doctorsReached: 12,
+      samplesToDeliver: 34,
+      updatedAt: '08:30',
+    })
+  })
+
+  it('traz o desempenho da equipe com meta e comparação canônicas', () => {
+    const porId = Object.fromEntries(TEAM_PERFORMANCE.map((m) => [m.id, m]))
+    expect(porId.coverage).toMatchObject({ value: 82, target: 90 })
+    expect(porId['productive-visits']).toMatchObject({ value: 68, target: 75 })
+    expect(porId.conversion).toMatchObject({ value: 23, target: 25 })
+    expect(porId['incremental-sellout']).toMatchObject({ value: 1_200_000, delta: 15 })
+    expect(formatMoney(1_200_000)).toBe('R$ 1,2M')
+  })
+
+  it('lista as quatro próximas ações sugeridas', () => {
+    expect(SUGGESTED_ACTIONS).toEqual([
+      'Priorizar 5 cardiologistas de alto potencial',
+      'Aumentar frequência em 3 territórios',
+      'Entregar 12 amostras a médicos-alvo',
+      'Apresentar campanha Losartana Plus',
+    ])
+  })
+
+  it('aponta as amostras a entregar para uma rota registrada do AG', () => {
+    expect(SAMPLE_ALLOCATION_ROUTE).toBe('/ag/alocacao')
+    const destino = ROUTES.find((route) => route.path === SAMPLE_ALLOCATION_ROUTE)
+    expect(destino).toBeDefined()
+    expect(destino?.product).toBe('ag')
+    expect(resolveTheme(SAMPLE_ALLOCATION_ROUTE)).toBe('ag')
+  })
+
+  it('classifica todo pin do mapa numa prioridade conhecida', () => {
+    for (const pin of PRIORITY_PINS) {
+      expect(PRIORITY_ORDER).toContain(pin.priority)
+      expect(pin.x).toBeGreaterThan(0)
+      expect(pin.y).toBeGreaterThan(0)
+    }
+    const comMedico = PRIORITY_PINS.filter((pin) => pin.doctorId !== null)
+    for (const pin of comMedico) {
+      expect(DOCTORS.some((doctor) => doctor.id === pin.doctorId)).toBe(true)
+    }
+  })
+
+  it('replaneja mantendo as mesmas paradas e economizando deslocamento', () => {
+    expect(REPLANNED_ROUTE.stops).toHaveLength(BASE_ROUTE.stops.length)
+
+    const base = [...BASE_ROUTE.stops.map((stop) => stop.id)].sort()
+    const replan = [...REPLANNED_ROUTE.stops.map((stop) => stop.id)].sort()
+    expect(replan).toEqual(base)
+
+    expect(REPLANNED_ROUTE.stops.map((s) => s.id)).not.toEqual(BASE_ROUTE.stops.map((s) => s.id))
+    expect(TRAVEL_SAVED_MINUTES).toBeGreaterThan(0)
+    expect(REPLANNED_ROUTE.coveredPotentialBrl).toBe(BASE_ROUTE.coveredPotentialBrl)
+  })
+
+  it('sobe a parada em ruptura para o topo do roteiro replanejado', () => {
+    const posicaoBase = BASE_ROUTE.stops.findIndex((stop) => stop.id === 'stop-3')
+    const posicaoReplan = REPLANNED_ROUTE.stops.findIndex((stop) => stop.id === 'stop-3')
+    expect(posicaoReplan).toBeLessThan(posicaoBase)
+    expect(REPLANNED_ROUTE.stops[posicaoReplan]?.priority).toBe('very_high')
+  })
+
+  it('pesa os quatro fatores de roteirização em 100%', () => {
+    expect(ROUTE_FACTORS.map((f) => f.id)).toEqual(['potential', 'distance', 'traffic', 'window'])
+    expect(ROUTE_FACTORS.reduce((sum, f) => sum + f.weightPercent, 0)).toBe(100)
   })
 })
 

@@ -143,12 +143,30 @@ export const ROUTES: readonly RouteEntry[] = [
   },
   {
     path: '/gtm',
-    title: 'GTM',
-    badge: 'GTM',
+    title: 'Visão Geral do GTM',
+    badge: 'GTM 2.1',
     theme: 'gtm',
     product: 'gtm',
     features: [],
     filters: ['period', 'bu', 'brand', 'region', 'territory', 'team', 'specialty'],
+  },
+  {
+    path: '/gtm/nba',
+    title: 'Next Best Action',
+    badge: 'GTM 2.5',
+    theme: 'gtm',
+    product: 'gtm',
+    features: [],
+    filters: ['period', 'territory', 'specialty', 'product'],
+  },
+  {
+    path: '/gtm/roteirizacao',
+    title: 'Roteirização Inteligente',
+    badge: 'GTM 2.6',
+    theme: 'gtm',
+    product: 'gtm',
+    features: [],
+    filters: ['period', 'region', 'territory', 'team'],
   },
   {
     path: '/rgm',
@@ -248,6 +266,15 @@ export const ROUTES: readonly RouteEntry[] = [
     product: 'ag',
     features: [],
     filters: ['period', 'bu', 'brand', 'product', 'specialty', 'campaign', 'region'],
+  },
+  {
+    path: '/ag/alocacao',
+    title: 'Otimizador de Alocação',
+    badge: 'AG',
+    theme: 'ag',
+    product: 'ag',
+    features: [],
+    filters: ['period', 'bu', 'brand', 'product', 'specialty', 'region', 'territory'],
   },
 ]
 
