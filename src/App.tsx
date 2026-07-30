@@ -4,8 +4,11 @@ import { ROUTES } from './routes/registry'
 import { DecisionCentral } from './screens/DecisionCentral'
 import { DecisionDetail } from './screens/DecisionDetail'
 import { AgOverview } from './screens/ag/AgOverview'
+import { Reports as AgReports } from './screens/ag/Reports'
 import { AllocationOptimizer } from './screens/ag/AllocationOptimizer'
+import { CampaignPlanning } from './screens/ag/CampaignPlanning'
 import { ConversionRoi } from './screens/ag/ConversionRoi'
+import { Inventory } from './screens/ag/Inventory'
 import { Assortment } from './screens/gtm/Assortment'
 import { CoverageSimulator } from './screens/gtm/CoverageSimulator'
 import { FieldExecution } from './screens/gtm/FieldExecution'
@@ -57,8 +60,11 @@ const SCREENS: Record<string, ReactElement> = {
   '/rgm/war-room': <GenericsWarRoom />,
   '/rgm/relatorios': <Reports />,
   '/ag': <AgOverview />,
+  '/ag/campanhas': <CampaignPlanning />,
   '/ag/otimizador': <AllocationOptimizer />,
+  '/ag/estoque': <Inventory />,
   '/ag/conversao-roi': <ConversionRoi />,
+  '/ag/relatorios': <AgReports />,
   '/gtm': <GtmOverview />,
   '/gtm/planejamento': <GtmPlanning />,
   '/gtm/segmentacao': <Segmentation />,
