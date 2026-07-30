@@ -57,7 +57,7 @@ export function CopilotAnswer({ compact = false }: { compact?: boolean }) {
               {block.rows.map((row) => (
                 <li key={row.label} className="flex flex-wrap items-baseline justify-between gap-2 py-1.5">
                   <span className="min-w-0 text-delta-lg text-slate-800">{row.label}</span>
-                  <span className="shrink-0 text-right">
+                  <span className="min-w-0 text-right">
                     <span className="text-delta-lg font-semibold tabular-nums text-slate-900">
                       {row.value}
                     </span>

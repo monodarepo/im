@@ -1,21 +1,11 @@
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { CURRENT_PERSONA } from '../domain/persona'
+import { formatInteger } from '../domain/format'
+import { SEMANTIC } from '../design/tokens'
+import { countBySeverity } from '../mock/notifications'
 import { resolveRoute } from '../routes/registry'
 import { activeFilters, FILTER_LABEL, useFilters } from '../state/filtersStore'
 import { useCopilot } from '../state/copilotStore'
-
-function IconButton({ label, children }: { label: string; children: string }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      className="flex h-8 w-8 items-center justify-center rounded-control border border-surface-border bg-surface-card text-slate-600 hover:bg-slate-50"
-    >
-      <span aria-hidden>{children}</span>
-    </button>
-  )
-}
 
 export function Header() {
   const { pathname } = useLocation()
@@ -25,16 +15,16 @@ export function Header() {
   const filters = useFilters()
   const openCopilot = useCopilot((state) => state.open)
   const pills = activeFilters(filters, declared)
+  const criticalAlerts = countBySeverity('critical')
 
   return (
     <header className="flex flex-wrap items-center gap-3 border-b border-surface-border bg-surface-card px-6 py-3">
-      <button
-        type="button"
+      <span
         className="rounded-control px-3 py-1.5 text-delta-lg font-medium text-white"
         style={{ backgroundColor: 'var(--product-accent)' }}
       >
         Filtros
-      </button>
+      </span>
 
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
         {pills.map((pill) => (
@@ -64,8 +54,33 @@ export function Header() {
           </kbd>
         </button>
 
-        <IconButton label="Notificações">🔔</IconButton>
-        <IconButton label="Ajuda">?</IconButton>
+        <Link
+          to="/notificacoes"
+          aria-label={`Notificações — ${formatInteger(criticalAlerts)} alertas críticos`}
+          title="Central de Notificações"
+          className="relative flex h-8 w-8 items-center justify-center rounded-control border border-surface-border bg-surface-card text-slate-600 hover:bg-slate-50"
+        >
+          <span aria-hidden>🔔</span>
+          {criticalAlerts > 0 ? (
+            <span
+              aria-hidden
+              className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold text-white"
+              style={{ backgroundColor: SEMANTIC.negative }}
+            >
+              {formatInteger(criticalAlerts)}
+            </span>
+          ) : null}
+        </Link>
+
+        <button
+          type="button"
+          disabled
+          aria-label="Ajuda — Fase 2"
+          title="Ajuda — Fase 2"
+          className="flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-control border border-surface-border bg-surface-card text-slate-300"
+        >
+          <span aria-hidden>?</span>
+        </button>
 
         <span
           className="flex h-8 w-8 items-center justify-center rounded-full text-delta font-semibold text-white"

@@ -1,3 +1,4 @@
+import { ThreadRibbon } from '../../components/ThreadRibbon'
 import { Link } from 'react-router-dom'
 import { DataBadge } from '../../components/DataBadge'
 import { Panel } from '../../components/Panel'
@@ -119,6 +120,7 @@ function ForwardingFooter() {
 export function RootCause() {
   return (
     <div className="max-w-5xl space-y-5">
+      <ThreadRibbon step="diagnosis" />
       <div>
         <h1 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
           Diagnóstico de causa-raiz

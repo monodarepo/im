@@ -27,6 +27,7 @@ export type DecisionState =
   | 'rejected'
   | 'executing'
   | 'concluded'
+  | 'learned'
 
 export const DECISION_STATE_TOKEN: Record<DecisionState, string> = {
   draft: 'RASCUNHO',
@@ -36,6 +37,7 @@ export const DECISION_STATE_TOKEN: Record<DecisionState, string> = {
   rejected: 'REJEITADA',
   executing: 'EM_EXECUCAO',
   concluded: 'CONCLUIDA',
+  learned: 'APRENDIDA',
 }
 
 export const DECISION_STATE_LABEL: Record<DecisionState, string> = {
@@ -46,6 +48,7 @@ export const DECISION_STATE_LABEL: Record<DecisionState, string> = {
   rejected: 'Rejeitada',
   executing: 'Em execução',
   concluded: 'Concluída',
+  learned: 'Aprendida',
 }
 
 export const DECISION_STATE_TONE: Record<DecisionState, SemanticTone> = {
@@ -56,6 +59,7 @@ export const DECISION_STATE_TONE: Record<DecisionState, SemanticTone> = {
   rejected: 'negative',
   executing: 'attention',
   concluded: 'positive',
+  learned: 'positive',
 }
 
 /**
@@ -71,7 +75,13 @@ export const DECISION_TRANSITIONS: Record<DecisionState, readonly DecisionState[
   approved: ['executing'],
   rejected: [],
   executing: ['concluded'],
-  concluded: [],
+  /**
+   * Concluir não encerra o ciclo — aprender encerra. `APRENDIDA` (seção 8.3)
+   * marca que o resultado medido virou regra: a decisão deixou de ser um caso
+   * e passou a calibrar as próximas.
+   */
+  concluded: ['learned'],
+  learned: [],
 }
 
 export function canTransition(from: DecisionState, to: DecisionState): boolean {

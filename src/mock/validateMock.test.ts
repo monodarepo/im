@@ -304,6 +304,13 @@ import {
 import { ANSWER_BLOCKS, CANONICAL_QUESTION, SUGGESTED_QUESTIONS } from './copilotAnswer'
 import { ALERTS, PRIORITIZED_ALERTS, isWellFormed } from './notifications'
 import {
+  nextThreadStep,
+  previousThreadStep,
+  THREAD_DECISION_ID,
+  THREAD_STEPS,
+  threadPosition,
+} from './thread'
+import {
   DECISION_TRANSITIONS,
   isAuditTrailConsistent,
   type DecisionState,
@@ -1482,7 +1489,10 @@ describe('objeto Decisão (8.1)', () => {
     expect(canTransition('in_approval', 'concluded')).toBe(false)
     expect(canTransition('concluded', 'proposed')).toBe(false)
     expect(isTerminal('rejected')).toBe(true)
-    expect(isTerminal('concluded')).toBe(true)
+    expect(isTerminal('learned')).toBe(true)
+    expect(isTerminal('concluded')).toBe(false)
+    expect(canTransition('concluded', 'learned')).toBe(true)
+    expect(DECISION_STATE_TOKEN.learned).toBe('APRENDIDA')
     expect(isTerminal('in_approval')).toBe(false)
   })
 
@@ -1493,7 +1503,8 @@ describe('objeto Decisão (8.1)', () => {
 
   it('enviar para aprovação move D-2026-0001 e anexa a parcela de R$ 1,9M', () => {
     const workflow = useDecisionWorkflow.getState()
-    expect(workflow.stateOf(APPROVAL_DECISION_ID)).toBe('proposed')
+    /** O registro da 8.1 já abre em aprovação; o store parte dele desde P12. */
+    expect(workflow.stateOf(APPROVAL_DECISION_ID)).toBe('in_approval')
 
     workflow.submitForApproval(APPROVAL_DECISION_ID, {
       id: 'rgm-scenario-3',
@@ -2669,5 +2680,172 @@ describe('P11 — a plataforma fecha em 45 telas', () => {
     expect(coverage.expected).toBe(45)
     expect(coverage.mapped).toBe(45)
     expect(coverage.missing).toBe(0)
+  })
+})
+
+describe('P12 — fio condutor Losartana (seção 8.3)', () => {
+  it('percorre as nove etapas na ordem da seção 8.3', () => {
+    expect(THREAD_STEPS.map((step) => step.id)).toEqual([
+      'detection',
+      'diagnosis',
+      'simulation',
+      'prioritization',
+      'plan',
+      'reinforcement',
+      'execution',
+      'measurement',
+      'learning',
+    ])
+    expect(THREAD_STEPS.map((step) => step.route)).toEqual([
+      '/hub',
+      '/hub/causa-raiz',
+      '/rgm/cenarios',
+      '/gtm/segmentacao',
+      '/gtm/nba',
+      '/ag/otimizador',
+      '/gtm/execucao',
+      '/hub/produto/losartana-50-30',
+      '/decisoes/D-2026-0001',
+    ])
+  })
+
+  it('aponta toda rota do fio para uma tela que existe', () => {
+    const exists = (route: string) =>
+      route.startsWith('/decisoes/')
+        ? findDecisionRecord(route.split('/')[2] ?? '') !== undefined
+        : ROUTES.some((entry) => entry.path === route || entry.navPath === route)
+
+    for (const step of THREAD_STEPS) {
+      expect(exists(step.route)).toBe(true)
+      for (const also of step.alsoRoutes) expect(exists(also.route)).toBe(true)
+      expect(step.narrative.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('encadeia próxima e anterior sem beco sem saída', () => {
+    expect(previousThreadStep('detection')).toBeUndefined()
+    expect(nextThreadStep('learning')).toBeUndefined()
+
+    for (let index = 0; index < THREAD_STEPS.length - 1; index += 1) {
+      const step = THREAD_STEPS[index]
+      const next = THREAD_STEPS[index + 1]
+      if (!step || !next) continue
+      expect(nextThreadStep(step.id)).toBe(next)
+      expect(previousThreadStep(next.id)).toBe(step)
+      expect(threadPosition(step.id)).toBe(index + 1)
+    }
+  })
+
+  /**
+   * A faixa do fio é o corrimão da demonstração. Se alguém refatorar uma tela
+   * e derrubar a faixa, o fio abre um beco sem saída — este teste segura isso
+   * no código-fonte, sem depender de navegador.
+   */
+  it('mantém a faixa do fio renderizada em toda tela do fluxo', () => {
+    const RIBBONS: readonly [string, string][] = [
+      ['screens/hub/MarketOverview.tsx', 'detection'],
+      ['screens/hub/RootCause.tsx', 'diagnosis'],
+      ['screens/rgm/ScenarioSimulator.tsx', 'simulation'],
+      ['screens/gtm/Segmentation.tsx', 'prioritization'],
+      ['screens/gtm/NextBestAction.tsx', 'plan'],
+      ['screens/gtm/SmartRouting.tsx', 'plan'],
+      ['screens/ag/AllocationOptimizer.tsx', 'reinforcement'],
+      ['screens/gtm/FieldExecution.tsx', 'execution'],
+      ['screens/ag/FieldExecution.tsx', 'execution'],
+      ['screens/hub/Product360.tsx', 'measurement'],
+      ['screens/DecisionDetail.tsx', 'learning'],
+    ]
+
+    for (const [file, step] of RIBBONS) {
+      const source = readFileSync(join(SRC, file), 'utf8')
+      expect(source, `${file} sem ThreadRibbon`).toContain(`<ThreadRibbon step="${step}"`)
+    }
+  })
+
+  it('fecha o fio na decisão que o alimenta', () => {
+    expect(THREAD_DECISION_ID).toBe('D-2026-0001')
+    expect(findDecisionRecord(THREAD_DECISION_ID)).toBeDefined()
+  })
+})
+
+describe('P12 — workflow parte do estado do registro', () => {
+  beforeEach(() => {
+    useDecisionWorkflow.getState().reset()
+  })
+
+  /**
+   * Regressão do QA: a tela exibia o estado do registro e o store transicionava
+   * a partir do próprio default. A transição válida na tela era inválida no
+   * domínio — "Transição inválida: PROPOSTA → APROVADA" no meio do fio.
+   */
+  it('parte do estado declarado no registro, não do default do store', () => {
+    const { stateOf } = useDecisionWorkflow.getState()
+    expect(stateOf('D-2026-0001')).toBe('in_approval')
+    expect(stateOf('D-2026-0003')).toBe('approved')
+    expect(stateOf('D-2026-0004')).toBe('executing')
+    expect(stateOf('D-criada-na-sessao')).toBe('proposed')
+  })
+
+  it('caminha a decisão do fio até APRENDIDA só por transições válidas', () => {
+    const store = useDecisionWorkflow.getState()
+    store.moveTo(THREAD_DECISION_ID, 'approved')
+    store.moveTo(THREAD_DECISION_ID, 'executing')
+    store.moveTo(THREAD_DECISION_ID, 'concluded')
+    store.moveTo(THREAD_DECISION_ID, 'learned')
+    expect(useDecisionWorkflow.getState().stateOf(THREAD_DECISION_ID)).toBe('learned')
+    expect(() => useDecisionWorkflow.getState().moveTo(THREAD_DECISION_ID, 'proposed')).toThrow()
+  })
+
+  it('recusa o salto que a tela nunca oferece', () => {
+    expect(() => useDecisionWorkflow.getState().moveTo('D-2026-0001', 'concluded')).toThrow()
+  })
+})
+
+describe('P12 — regressões do QA sweep', () => {
+  /**
+   * Regressão do QA: três botões do Header eram clicáveis sem efeito. A regra
+   * do CLAUDE.md é binária — ou o botão age, ou é FutureButton desabilitado
+   * com fase. O scanner segura qualquer botão novo que nasça morto.
+   */
+  it('não deixa nascer botão clicável sem efeito', () => {
+    const roots = ['screens', 'components', 'shell']
+    const offenders: string[] = []
+
+    const scan = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const path = join(dir, entry)
+        if (statSync(path).isDirectory()) {
+          scan(path)
+          continue
+        }
+        if (!entry.endsWith('.tsx')) continue
+        const source = readFileSync(path, 'utf8')
+        for (const match of source.matchAll(/<button\b[^>]*?>/gs)) {
+          const tag = match[0]
+          if (!tag.includes('onClick') && !tag.includes('disabled')) {
+            offenders.push(relative(SRC, path))
+          }
+        }
+      }
+    }
+
+    for (const root of roots) scan(join(SRC, root))
+    expect(offenders).toEqual([])
+  })
+
+  /** Regressão do QA: os warnings de future flag do React Router no console. */
+  it('mantém as future flags do React Router ligadas', () => {
+    const source = readFileSync(join(SRC, 'main.tsx'), 'utf8')
+    expect(source).toContain('v7_startTransition')
+    expect(source).toContain('v7_relativeSplatPath')
+  })
+
+  /**
+   * Regressão do QA: o sino do Header agora navega para a Central de
+   * Notificações — era um botão sem efeito.
+   */
+  it('liga o sino do Header à Central de Notificações', () => {
+    const source = readFileSync(join(SRC, 'shell/Header.tsx'), 'utf8')
+    expect(source).toContain('to="/notificacoes"')
   })
 })

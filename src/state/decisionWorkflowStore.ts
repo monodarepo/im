@@ -8,6 +8,7 @@ import {
 } from '../domain/decision'
 import type { ProductId } from '../design/tokens'
 import { HOJE } from '../domain/today'
+import { findDecisionRecord } from '../mock/decisionRecords'
 
 /**
  * Estado das decisões na Central.
@@ -19,6 +20,16 @@ import { HOJE } from '../domain/today'
  */
 
 const INITIAL_STATE: DecisionState = 'proposed'
+
+/**
+ * Estado de partida de uma decisão: o que o registro da 8.1 declara, ou
+ * `proposed` para decisões criadas na sessão. Sem isso, a tela mostraria o
+ * estado do registro e o store transicionaria a partir de outro — a transição
+ * válida na tela seria inválida no domínio.
+ */
+function baseState(decisionId: string): DecisionState {
+  return findDecisionRecord(decisionId)?.state ?? INITIAL_STATE
+}
 
 type Submission = {
   readonly decisionId: string
@@ -49,7 +60,7 @@ export const useDecisionWorkflow = create<DecisionWorkflowState>((set, get) => (
   states: {},
   parcels: [],
 
-  stateOf: (decisionId) => get().states[decisionId] ?? INITIAL_STATE,
+  stateOf: (decisionId) => get().states[decisionId] ?? baseState(decisionId),
 
   parcelsOf: (decisionId) =>
     get()
@@ -58,7 +69,7 @@ export const useDecisionWorkflow = create<DecisionWorkflowState>((set, get) => (
 
   submitForApproval: (decisionId, parcel) =>
     set((state) => {
-      const current = state.states[decisionId] ?? INITIAL_STATE
+      const current = state.states[decisionId] ?? baseState(decisionId)
       const alreadySubmitted = state.parcels.some(
         (entry) => entry.decisionId === decisionId && entry.parcel.id === parcel.id,
       )
@@ -79,7 +90,7 @@ export const useDecisionWorkflow = create<DecisionWorkflowState>((set, get) => (
 
   moveTo: (decisionId, next) =>
     set((state) => {
-      const current = state.states[decisionId] ?? INITIAL_STATE
+      const current = state.states[decisionId] ?? baseState(decisionId)
       return { states: { ...state.states, [decisionId]: transition(current, next) } }
     }),
 

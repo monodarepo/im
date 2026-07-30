@@ -1,4 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
+import { ThreadRibbon } from '../components/ThreadRibbon'
+import { THREAD_DECISION_ID } from '../mock/thread'
 import { ConfidenceMeter } from '../components/ConfidenceMeter'
 import { DataBadge } from '../components/DataBadge'
 import { FutureButton } from '../components/FutureButton'
@@ -59,8 +61,7 @@ function FullDetail({ record }: { record: DecisionRecord }) {
   const links = useDecisions((state) => state.links).filter((link) => link.decisionId === record.id)
   const origin = OPPORTUNITIES.find((opportunity) => opportunity.decisionId === record.id)
 
-  /** `proposed` é o padrão do store; o registro manda enquanto ninguém moveu. */
-  const state: DecisionState = workflowState === 'proposed' ? record.state : workflowState
+  const state: DecisionState = workflowState
   const nextStates = DECISION_TRANSITIONS[state]
   const parcels = [...record.parcels, ...sessionParcels]
   const total = parcelTotal(record.parcels)
@@ -68,6 +69,7 @@ function FullDetail({ record }: { record: DecisionRecord }) {
 
   return (
     <div className="space-y-5">
+      {record.id === THREAD_DECISION_ID ? <ThreadRibbon step="learning" /> : null}
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">

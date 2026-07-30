@@ -1,3 +1,4 @@
+import { ThreadRibbon } from '../../components/ThreadRibbon'
 import { Link } from 'react-router-dom'
 import { DiagnosticList } from '../../components/DiagnosticList'
 import { KpiCard } from '../../components/KpiCard'
@@ -23,6 +24,7 @@ function PanelLink({ to, children }: { to: string; children: string }) {
 export function MarketOverview() {
   return (
     <div className="space-y-5">
+      <ThreadRibbon step="detection" />
       <h1 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
         Visão geral do mercado
       </h1>

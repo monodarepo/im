@@ -42,6 +42,7 @@ const KANBAN_COLUMNS: readonly DecisionState[] = [
   'approved',
   'executing',
   'concluded',
+  'learned',
 ]
 
 export function DecisionCentral() {
@@ -49,11 +50,8 @@ export function DecisionCentral() {
   const created = useRadarDecisions((state) => state.created)
   const stateOf = useDecisionWorkflow((state) => state.stateOf)
 
-  /** O estado do workflow vence o do registro: o que o usuário moveu na sessão. */
-  const records = DECISION_RECORDS.map((record) => ({
-    ...record,
-    state: stateOf(record.id) === 'proposed' ? record.state : stateOf(record.id),
-  }))
+  /** O estado efetivo vem do workflow, que parte do estado do registro. */
+  const records = DECISION_RECORDS.map((record) => ({ ...record, state: stateOf(record.id) }))
 
   const totalBrl = records.reduce((sum, record) => sum + record.impactBrl, 0)
 
@@ -126,7 +124,7 @@ export function DecisionCentral() {
 
 function KanbanView({ records }: { records: readonly DecisionRecord[] }) {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-5">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-6">
       {KANBAN_COLUMNS.map((state) => {
         const column = records.filter((record) => record.state === state)
         const total = column.reduce((sum, record) => sum + record.impactBrl, 0)

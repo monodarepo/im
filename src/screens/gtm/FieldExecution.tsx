@@ -1,3 +1,4 @@
+import { ThreadRibbon } from '../../components/ThreadRibbon'
 import { DataBadge } from '../../components/DataBadge'
 import { FutureButton } from '../../components/FutureButton'
 import { KpiCard } from '../../components/KpiCard'
@@ -557,6 +558,7 @@ function FieldAppFrame() {
 export function FieldExecution() {
   return (
     <div className="space-y-5">
+      <ThreadRibbon step="execution" />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-sm font-semibold uppercase tracking-wide text-slate-500">

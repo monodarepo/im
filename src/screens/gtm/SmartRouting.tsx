@@ -1,3 +1,4 @@
+import { ThreadRibbon } from '../../components/ThreadRibbon'
 import { useState } from 'react'
 import { DataBadge } from '../../components/DataBadge'
 import { KpiCard } from '../../components/KpiCard'
@@ -75,6 +76,7 @@ export function SmartRouting() {
 
   return (
     <div className="space-y-5">
+      <ThreadRibbon step="plan" />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-sm font-semibold uppercase tracking-wide text-slate-500">

@@ -1,3 +1,4 @@
+import { ThreadRibbon } from '../../components/ThreadRibbon'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -577,6 +578,7 @@ export function Segmentation() {
 
   return (
     <div className="space-y-5">
+      <ThreadRibbon step="prioritization" />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-sm font-semibold uppercase tracking-wide text-slate-500">

@@ -1,3 +1,4 @@
+import { ThreadRibbon } from '../../components/ThreadRibbon'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DataBadge } from '../../components/DataBadge'
 import { Panel } from '../../components/Panel'
@@ -61,6 +62,7 @@ export function Product360() {
 
   return (
     <div className="space-y-5">
+      <ThreadRibbon step="measurement" />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-sm font-semibold uppercase tracking-wide text-slate-500">

@@ -1,3 +1,4 @@
+import { ThreadRibbon } from '../../components/ThreadRibbon'
 import { Link } from 'react-router-dom'
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { DataBadge } from '../../components/DataBadge'
@@ -764,6 +765,7 @@ export function FieldExecution() {
 
   return (
     <div className="space-y-5">
+      <ThreadRibbon step="execution" />
       <CycleHeader />
 
       <DegradedBanner
