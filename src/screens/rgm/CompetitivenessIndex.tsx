@@ -12,6 +12,7 @@ import {
   YAxis,
 } from 'recharts'
 import { DataBadge } from '../../components/DataBadge'
+import { CHART_AXIS, CHART_CURSOR, CHART_GRID, CHART_LINE } from '../../design/chartTheme'
 import { DegradedBanner } from '../../components/DegradedBanner'
 import { FutureButton } from '../../components/FutureButton'
 import { KpiCard } from '../../components/KpiCard'
@@ -271,7 +272,7 @@ function IndexEvolutionChart() {
     <div className="h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -8 }}>
-          <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid {...CHART_GRID} />
           <ReferenceArea
             y1={PARITY_BAND.floor}
             y2={PARITY_BAND.ceiling}
@@ -289,29 +290,20 @@ function IndexEvolutionChart() {
               fontSize: 12,
             }}
           />
-          <XAxis
-            dataKey="label"
-            tickLine={false}
-            axisLine={{ stroke: '#E2E8F0' }}
-            tick={{ fill: '#64748B', fontSize: 12 }}
-          />
+          <XAxis {...CHART_AXIS} dataKey="label" />
           <YAxis
+            {...CHART_AXIS}
             width={44}
             domain={[INDEX_DOMAIN[0], INDEX_DOMAIN[1]]}
             ticks={[...INDEX_TICKS]}
-            tickLine={false}
-            axisLine={false}
-            tick={{ fill: '#64748B', fontSize: 12 }}
           />
-          <Tooltip content={<IndexTooltip />} cursor={{ stroke: '#CBD5E1' }} />
+          <Tooltip content={<IndexTooltip />} cursor={CHART_CURSOR} />
           <Line
+            {...CHART_LINE}
             type="monotone"
             dataKey="indice"
             name="Índice de competitividade"
             stroke={SERIES_COLOR}
-            strokeWidth={2.5}
-            dot={{ r: 3, fill: SERIES_COLOR, strokeWidth: 0 }}
-            activeDot={{ r: 5 }}
           />
         </LineChart>
       </ResponsiveContainer>

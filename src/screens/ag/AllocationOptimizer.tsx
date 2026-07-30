@@ -2,6 +2,7 @@ import { ThreadRibbon } from '../../components/ThreadRibbon'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
+import { CHART_TOOLTIP_STYLE } from '../../design/chartTheme'
 import { DataBadge } from '../../components/DataBadge'
 import { FutureButton } from '../../components/FutureButton'
 import { KpiCard } from '../../components/KpiCard'
@@ -69,7 +70,7 @@ function StockoutBlock() {
   return (
     <div
       role="status"
-      className="rounded-card border px-5 py-4"
+      className="rounded-card border px-4 py-4"
       style={{ borderColor: `${SEMANTIC.attention}66`, backgroundColor: `${SEMANTIC.attention}0F` }}
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -247,7 +248,7 @@ function SpecialtyDonut() {
             </Pie>
             <Tooltip
               formatter={(value: number) => [formatPercent(value, 0), 'Participação']}
-              contentStyle={{ fontSize: 12, borderRadius: 12, borderColor: '#E2E8F0' }}
+              contentStyle={CHART_TOOLTIP_STYLE}
             />
           </PieChart>
         </ResponsiveContainer>

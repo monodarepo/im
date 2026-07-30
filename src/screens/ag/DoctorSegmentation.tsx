@@ -14,6 +14,7 @@ import {
   YAxis,
   ZAxis,
 } from 'recharts'
+import { CHART_AXIS, CHART_CURSOR, CHART_GRID } from '../../design/chartTheme'
 import { DataBadge } from '../../components/DataBadge'
 import { FutureButton } from '../../components/FutureButton'
 import { KpiCard } from '../../components/KpiCard'
@@ -72,7 +73,6 @@ import {
  * converteria.
  */
 
-const GRID_STROKE = '#E2E8F0'
 const THRESHOLD_STROKE = '#94A3B8'
 const AXIS_TICK_FILL = '#64748B'
 const LABEL_FILL = '#475569'
@@ -238,7 +238,7 @@ function SegmentationMatrix({
     <div className="h-[340px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <ScatterChart margin={{ top: 12, right: 16, bottom: 24, left: 4 }}>
-          <CartesianGrid stroke={GRID_STROKE} strokeDasharray="3 3" />
+          <CartesianGrid {...CHART_GRID} />
 
           {QUADRANT_AREAS.map((area) => (
             <ReferenceArea
@@ -260,12 +260,10 @@ function SegmentationMatrix({
           ))}
 
           <XAxis
+            {...CHART_AXIS}
             type="number"
             dataKey="x"
             domain={[SCORE_MIN, SCORE_MAX]}
-            tickLine={false}
-            axisLine={{ stroke: GRID_STROKE }}
-            tick={{ fill: AXIS_TICK_FILL, fontSize: 12 }}
             label={{
               value: AXIS_LABEL.potential,
               position: 'insideBottom',
@@ -275,13 +273,11 @@ function SegmentationMatrix({
             }}
           />
           <YAxis
+            {...CHART_AXIS}
             type="number"
             dataKey="y"
             domain={[SCORE_MIN, SCORE_MAX]}
             width={44}
-            tickLine={false}
-            axisLine={false}
-            tick={{ fill: AXIS_TICK_FILL, fontSize: 12 }}
             label={{
               value: AXIS_LABEL.propensity,
               angle: -90,
@@ -295,7 +291,7 @@ function SegmentationMatrix({
           <ReferenceLine x={POTENTIAL_THRESHOLD} stroke={THRESHOLD_STROKE} strokeDasharray="4 4" />
           <ReferenceLine y={PROPENSITY_THRESHOLD} stroke={THRESHOLD_STROKE} strokeDasharray="4 4" />
 
-          <Tooltip content={<MatrixTooltip />} cursor={{ strokeDasharray: '3 3' }} />
+          <Tooltip content={<MatrixTooltip />} cursor={CHART_CURSOR} />
 
           <Scatter
             data={[...points]}

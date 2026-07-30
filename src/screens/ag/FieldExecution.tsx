@@ -1,6 +1,7 @@
 import { ThreadRibbon } from '../../components/ThreadRibbon'
 import { Link } from 'react-router-dom'
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { CHART_AXIS, CHART_BAR, CHART_CURSOR, CHART_GRID } from '../../design/chartTheme'
 import { DataBadge } from '../../components/DataBadge'
 import { DegradedBanner } from '../../components/DegradedBanner'
 import { FutureButton } from '../../components/FutureButton'
@@ -453,23 +454,11 @@ function NonDeliveryChart() {
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
-            <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" horizontal={false} />
-            <XAxis
-              type="number"
-              tickLine={false}
-              axisLine={{ stroke: '#E2E8F0' }}
-              tick={{ fill: '#64748B', fontSize: 12 }}
-            />
-            <YAxis
-              type="category"
-              dataKey="label"
-              width={180}
-              tickLine={false}
-              axisLine={false}
-              tick={{ fill: '#64748B', fontSize: 12 }}
-            />
-            <Tooltip content={<ReasonTooltip />} cursor={{ fill: '#F1F5F9' }} />
-            <Bar dataKey="deliveries" barSize={18} radius={[0, 4, 4, 0]}>
+            <CartesianGrid {...CHART_GRID} vertical horizontal={false} />
+            <XAxis {...CHART_AXIS} type="number" />
+            <YAxis {...CHART_AXIS} type="category" dataKey="label" width={180} />
+            <Tooltip content={<ReasonTooltip />} cursor={CHART_CURSOR} />
+            <Bar {...CHART_BAR} dataKey="deliveries" barSize={18} radius={[0, 2, 2, 0]}>
               {data.map((bar) => (
                 <Cell key={bar.id} fill={bar.gap ? GAP_COLOR : NEUTRAL_BAR} />
               ))}

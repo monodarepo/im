@@ -13,6 +13,14 @@ import {
   YAxis,
 } from 'recharts'
 import { DataBadge } from '../../components/DataBadge'
+import {
+  CHART_AXIS,
+  CHART_BAR,
+  CHART_CURSOR,
+  CHART_GRID,
+  CHART_LINE,
+  CHART_TOOLTIP_STYLE,
+} from '../../design/chartTheme'
 import { FutureButton } from '../../components/FutureButton'
 import { Panel } from '../../components/Panel'
 import { PerimeterMark, PerimeterNote } from '../../components/PerimeterNote'
@@ -319,7 +327,7 @@ export function ScenarioSimulator() {
                     key={option.id}
                     type="button"
                     onClick={() => setMetric(option.id)}
-                    className="rounded-[10px] px-2.5 py-1 text-delta font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                    className="rounded-control px-2.5 py-1 text-delta font-medium text-slate-600 transition-colors hover:bg-slate-50"
                     style={
                       metric === option.id
                         ? { backgroundColor: 'var(--product-accent)', color: '#FFFFFF' }
@@ -336,31 +344,27 @@ export function ScenarioSimulator() {
               <ResponsiveContainer width="100%" height="100%">
                 {metric === 'revenue' ? (
                   <BarChart data={chartData} margin={{ top: 8, right: 4, bottom: 0, left: -12 }}>
-                    <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="label" tick={{ fill: '#64748B', fontSize: 11 }} tickLine={false} />
-                    <YAxis tick={{ fill: '#64748B', fontSize: 11 }} tickLine={false} axisLine={false} />
+                    <CartesianGrid {...CHART_GRID} />
+                    <XAxis {...CHART_AXIS} dataKey="label" />
+                    <YAxis {...CHART_AXIS} />
                     <Tooltip
                       formatter={(value: number) => [formatMoney(value * 1_000_000), 'Receita líquida']}
-                      contentStyle={{ fontSize: 12, borderRadius: 12, borderColor: '#E2E8F0' }}
+                      contentStyle={CHART_TOOLTIP_STYLE}
+                      cursor={CHART_CURSOR}
                     />
-                    <Bar dataKey="receita" fill={REVENUE_COLOR} radius={[4, 4, 0, 0]} />
+                    <Bar {...CHART_BAR} dataKey="receita" fill={REVENUE_COLOR} />
                   </BarChart>
                 ) : (
                   <LineChart data={chartData} margin={{ top: 8, right: 4, bottom: 0, left: -12 }}>
-                    <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="label" tick={{ fill: '#64748B', fontSize: 11 }} tickLine={false} />
-                    <YAxis tick={{ fill: '#64748B', fontSize: 11 }} tickLine={false} axisLine={false} />
+                    <CartesianGrid {...CHART_GRID} />
+                    <XAxis {...CHART_AXIS} dataKey="label" />
+                    <YAxis {...CHART_AXIS} />
                     <Tooltip
                       formatter={(value: number) => [formatPercent(value), 'Market share']}
-                      contentStyle={{ fontSize: 12, borderRadius: 12, borderColor: '#E2E8F0' }}
+                      contentStyle={CHART_TOOLTIP_STYLE}
+                      cursor={CHART_CURSOR}
                     />
-                    <Line
-                      type="monotone"
-                      dataKey="share"
-                      stroke={SHARE_COLOR}
-                      strokeWidth={2.5}
-                      dot={{ r: 3, fill: SHARE_COLOR, strokeWidth: 0 }}
-                    />
+                    <Line {...CHART_LINE} type="monotone" dataKey="share" stroke={SHARE_COLOR} />
                   </LineChart>
                 )}
               </ResponsiveContainer>

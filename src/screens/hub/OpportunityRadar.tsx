@@ -6,6 +6,7 @@ import { FutureButton } from '../../components/FutureButton'
 import { KpiCard } from '../../components/KpiCard'
 import { Panel } from '../../components/Panel'
 import { StateChip } from '../../components/StateChip'
+import { ICON_SIZE, ICON_STROKE, iconUi } from '../../design/icons'
 import type { SemanticTone } from '../../design/tokens'
 import { formatInteger } from '../../domain/format'
 import { formatMoney, formatMoneyFull } from '../../domain/money'
@@ -87,8 +88,12 @@ function AxisSelector({
           >
             {option.label}
             {active ? (
-              <span aria-hidden className="ml-1.5 text-[0.7em]">
-                {descending ? '▼' : '▲'}
+              <span aria-hidden className="ml-1.5 inline-flex align-middle">
+                {descending ? (
+                  <iconUi.chevronDown size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+                ) : (
+                  <iconUi.chevronUp size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+                )}
               </span>
             ) : null}
           </button>
@@ -249,10 +254,14 @@ function RadarRow({
             <span className="block text-delta-lg font-semibold tabular-nums text-negative">
               {formatMoney(entry.inactionCost.totalBrl)}
             </span>
-            <span className="mt-0.5 block text-delta text-neutral">
+            <span className="mt-0.5 flex items-center justify-end gap-1 text-delta text-neutral">
               {expanded ? 'ocultar decomposição' : 'ver decomposição'}
-              <span aria-hidden className="ml-1">
-                {expanded ? '▲' : '▼'}
+              <span aria-hidden className="inline-flex">
+                {expanded ? (
+                  <iconUi.chevronUp size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+                ) : (
+                  <iconUi.chevronDown size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+                )}
               </span>
             </span>
           </button>

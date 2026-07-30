@@ -4,12 +4,12 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts'
+import { CHART_AXIS, CHART_BAR, CHART_CURSOR, CHART_GRID } from '../../design/chartTheme'
 import { DataBadge } from '../../components/DataBadge'
 import { DegradedBanner } from '../../components/DegradedBanner'
 import { FutureButton } from '../../components/FutureButton'
@@ -100,54 +100,63 @@ function PriceComparisonChart({ groups }: { groups: readonly PriceGroup[] }) {
   }))
 
   return (
-    <div className="w-full" style={{ height: 72 + groups.length * 56 }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={data}
-          layout="vertical"
-          barGap={4}
-          margin={{ top: 8, right: 16, bottom: 8, left: 0 }}
-        >
-          <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" horizontal={false} />
-          <XAxis
-            type="number"
-            tickLine={false}
-            axisLine={{ stroke: '#E2E8F0' }}
-            tick={{ fill: '#64748B', fontSize: 12 }}
-            tickFormatter={(value: number) => formatDecimal(value, 0)}
-            label={{
-              value: 'R$ por embalagem',
-              position: 'insideBottomRight',
-              offset: -4,
-              fill: '#64748B',
-              fontSize: 12,
-            }}
+    <div>
+      <div className="mb-2 flex gap-4 text-micro uppercase text-neutral">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: HYPERA_COLOR }} aria-hidden />
+          Hypera
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="h-2 w-2 rounded-sm"
+            style={{ backgroundColor: COMPETITOR_COLOR }}
+            aria-hidden
           />
-          <YAxis
-            type="category"
-            dataKey="label"
-            width={148}
-            tickLine={false}
-            axisLine={false}
-            tick={{ fill: '#334155', fontSize: 12 }}
-          />
-          <Tooltip content={<PriceTooltip />} cursor={{ fill: '#F1F5F9' }} />
-          <Legend
-            verticalAlign="top"
-            align="right"
-            iconType="square"
-            wrapperStyle={{ fontSize: 12, color: '#64748B', paddingBottom: 8 }}
-          />
-          <Bar dataKey="hypera" name="Hypera" fill={HYPERA_COLOR} barSize={12} radius={[0, 3, 3, 0]} />
-          <Bar
-            dataKey="concorrente"
-            name="Concorrente (referência)"
-            fill={COMPETITOR_COLOR}
-            barSize={12}
-            radius={[0, 3, 3, 0]}
-          />
-        </BarChart>
-      </ResponsiveContainer>
+          Concorrente (referência)
+        </span>
+      </div>
+      <div className="w-full" style={{ height: 72 + groups.length * 56 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            layout="vertical"
+            barGap={4}
+            margin={{ top: 8, right: 16, bottom: 8, left: 0 }}
+          >
+            <CartesianGrid {...CHART_GRID} vertical horizontal={false} />
+            <XAxis
+              {...CHART_AXIS}
+              type="number"
+              tickFormatter={(value: number) => formatDecimal(value, 0)}
+              label={{
+                value: 'R$ por embalagem',
+                position: 'insideBottomRight',
+                offset: -4,
+                fill: '#64748B',
+                fontSize: 12,
+              }}
+            />
+            <YAxis {...CHART_AXIS} type="category" dataKey="label" width={148} />
+            <Tooltip content={<PriceTooltip />} cursor={CHART_CURSOR} />
+            <Bar
+              {...CHART_BAR}
+              dataKey="hypera"
+              name="Hypera"
+              fill={HYPERA_COLOR}
+              barSize={12}
+              radius={[0, 2, 2, 0]}
+            />
+            <Bar
+              {...CHART_BAR}
+              dataKey="concorrente"
+              name="Concorrente (referência)"
+              fill={COMPETITOR_COLOR}
+              barSize={12}
+              radius={[0, 2, 2, 0]}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }

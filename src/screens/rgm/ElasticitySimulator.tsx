@@ -13,6 +13,13 @@ import {
   YAxis,
 } from 'recharts'
 import { ConfidenceMeter } from '../../components/ConfidenceMeter'
+import {
+  CHART_AREA,
+  CHART_AXIS,
+  CHART_CURSOR,
+  CHART_GRID,
+  CHART_LINE,
+} from '../../design/chartTheme'
 import { DataBadge } from '../../components/DataBadge'
 import { FutureButton } from '../../components/FutureButton'
 import { KpiCard } from '../../components/KpiCard'
@@ -229,7 +236,7 @@ export function ElasticitySimulator() {
                     key={level}
                     type="button"
                     onClick={() => setDiscountRate(level)}
-                    className="rounded-[10px] px-2.5 py-1 text-delta font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                    className="rounded-control px-2.5 py-1 text-delta font-medium text-slate-600 transition-colors hover:bg-slate-50"
                     style={
                       Math.abs(level - discountRate) < 0.0005
                         ? { backgroundColor: 'var(--product-accent)', color: '#FFFFFF' }
@@ -246,7 +253,7 @@ export function ElasticitySimulator() {
             <div className="h-[340px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={chartData} margin={{ top: 16, right: 16, bottom: 16, left: 8 }}>
-                  <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" vertical={false} />
+                  <CartesianGrid {...CHART_GRID} />
 
                   <ReferenceArea
                     x1={OBSERVED_PRICE_RANGE.minPriceBrl}
@@ -256,14 +263,12 @@ export function ElasticitySimulator() {
                   />
 
                   <XAxis
+                    {...CHART_AXIS}
                     dataKey="priceBrl"
                     type="number"
                     domain={[PRICE_SWEEP.minPriceBrl, PRICE_SWEEP.maxPriceBrl]}
                     ticks={[...PRICE_TICKS]}
                     tickFormatter={(value: number) => formatDecimal(value, 2)}
-                    tickLine={false}
-                    axisLine={{ stroke: '#E2E8F0' }}
-                    tick={{ fill: '#64748B', fontSize: 12 }}
                     label={{
                       value: 'Preço de tabela (R$)',
                       position: 'insideBottom',
@@ -274,12 +279,10 @@ export function ElasticitySimulator() {
                   />
 
                   <YAxis
+                    {...CHART_AXIS}
                     width={64}
                     domain={[floor, ceiling]}
                     tickFormatter={(value: number) => thousands(value)}
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: '#64748B', fontSize: 12 }}
                     label={{
                       value: 'Volume (mil unid.)',
                       angle: -90,
@@ -289,31 +292,33 @@ export function ElasticitySimulator() {
                     }}
                   />
 
-                  <Tooltip content={<CurveTooltip />} cursor={{ stroke: '#CBD5E1' }} />
+                  <Tooltip content={<CurveTooltip />} cursor={CHART_CURSOR} />
 
                   <Area
+                    {...CHART_AREA}
                     dataKey="bandLow"
                     stackId="band"
                     stroke="none"
                     fill="none"
+                    activeDot={false}
                     isAnimationActive={false}
                   />
                   <Area
+                    {...CHART_AREA}
                     dataKey="bandSpan"
                     stackId="band"
                     stroke="none"
                     fill={BAND_COLOR}
                     fillOpacity={0.3}
+                    activeDot={false}
                     isAnimationActive={false}
                   />
 
                   <Line
+                    {...CHART_LINE}
                     type="monotone"
                     dataKey="volume"
                     stroke={CURVE_COLOR}
-                    strokeWidth={2.5}
-                    dot={false}
-                    activeDot={{ r: 4 }}
                     isAnimationActive={false}
                   />
 

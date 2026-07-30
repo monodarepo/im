@@ -154,6 +154,7 @@ import {
   PRICE_LINES,
 } from './pricing'
 import { useDecisionWorkflow } from '../state/decisionWorkflowStore'
+import { useDensity } from '../state/densityStore'
 import {
   COMMERCIAL_DISCOUNT_BRL,
   CUTS,
@@ -588,8 +589,9 @@ describe('design tokens', () => {
     expect(SURFACE.app).toBe('#F6F7FB')
 
     const px = (value: string) => Number(value.replace('px', ''))
-    expect(px(RADIUS.control)).toBeGreaterThanOrEqual(12)
-    expect(px(RADIUS.card)).toBeLessThanOrEqual(16)
+    /** Padrão visual (ABS_04): 6px em controle, 8px em painel. Nada acima. */
+    expect(px(RADIUS.control)).toBe(6)
+    expect(px(RADIUS.card)).toBe(8)
     expect(px(LAYOUT.sidebarWidth)).toBeGreaterThanOrEqual(240)
     expect(px(LAYOUT.sidebarWidth)).toBeLessThanOrEqual(260)
     expect(px(TYPOGRAPHY.kpi)).toBeGreaterThanOrEqual(28)
@@ -2847,5 +2849,86 @@ describe('P12 — regressões do QA sweep', () => {
   it('liga o sino do Header à Central de Notificações', () => {
     const source = readFileSync(join(SRC, 'shell/Header.tsx'), 'utf8')
     expect(source).toContain('to="/notificacoes"')
+  })
+})
+
+describe('PD — padrão visual: os sinais de IA não voltam', () => {
+  const UI_ROOTS = ['screens', 'components', 'shell'] as const
+
+  const collectSources = (): { path: string; source: string }[] => {
+    const out: { path: string; source: string }[] = []
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const full = join(dir, entry)
+        if (statSync(full).isDirectory()) {
+          walk(full)
+          continue
+        }
+        if (!entry.endsWith('.tsx') && !entry.endsWith('.ts')) continue
+        out.push({ path: relative(SRC, full), source: readFileSync(full, 'utf8') })
+      }
+    }
+    for (const root of UI_ROOTS) walk(join(SRC, root))
+    return out
+  }
+
+  it('não tem emoji em nenhum lugar da interface', () => {
+    /**
+     * Blocos de emoji e pictogramas. Setas (U+2190–21FF) e formas geométricas
+     * (U+25A0–25FF) ficam de fora: triângulo de delta e seta de link são
+     * tipografia de instrumento, não emoji.
+     */
+    const emoji = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE0F}]/u
+    const offenders = collectSources()
+      .filter(({ source }) => emoji.test(source))
+      .map(({ path }) => path)
+    expect(offenders).toEqual([])
+  })
+
+  it('não tem gradiente em nenhum lugar da interface', () => {
+    const offenders = collectSources()
+      .filter(({ source }) => /linearGradient|radialGradient|bg-gradient/.test(source))
+      .map(({ path }) => path)
+    expect(offenders).toEqual([])
+  })
+
+  it('não tem raio acima de 8px', () => {
+    const offenders = collectSources()
+      .filter(({ source }) => /rounded-2xl|rounded-3xl|rounded-\[1\d+px\]/.test(source))
+      .map(({ path }) => path)
+    expect(offenders).toEqual([])
+  })
+
+  /** O mapa semântico é a única porta: mesmo conceito, mesmo ícone, 45 telas. */
+  it('só importa lucide-react através de src/design/icons.ts', () => {
+    const offenders = collectSources()
+      .filter(({ source }) => source.includes("from 'lucide-react'"))
+      .map(({ path }) => path)
+    expect(offenders).toEqual([])
+  })
+
+  it('não usa o vocabulário proibido de dashboard genérico', () => {
+    const banned = /Insights|Analytics|Powered by|powered by/
+    const offenders = collectSources()
+      .filter(({ source }) => banned.test(source))
+      .map(({ path }) => path)
+    expect(offenders).toEqual([])
+  })
+
+  it('fixa o par tipográfico e o numeral tabular global', () => {
+    const css = readFileSync(join(SRC, 'index.css'), 'utf8')
+    expect(css).toContain('@fontsource/geist-sans')
+    expect(css).toContain('@fontsource/geist-mono')
+    expect(css).toContain('font-variant-numeric: tabular-nums')
+    expect(css).toContain(':focus-visible')
+    expect(css).toContain('prefers-reduced-motion')
+  })
+
+  it('alterna a densidade global entre compacta e confortável', () => {
+    expect(useDensity.getState().density).toBe('compact')
+    useDensity.getState().toggle()
+    expect(useDensity.getState().density).toBe('comfortable')
+    useDensity.getState().toggle()
+    expect(useDensity.getState().density).toBe('compact')
   })
 })

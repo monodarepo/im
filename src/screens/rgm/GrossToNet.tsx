@@ -264,7 +264,7 @@ export function GrossToNet() {
                 key={option}
                 type="button"
                 onClick={() => setCut(option)}
-                className="rounded-[10px] px-2.5 py-1 text-delta font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                className="rounded-control px-2.5 py-1 text-delta font-medium text-slate-600 transition-colors hover:bg-slate-50"
                 style={
                   cut === option
                     ? { backgroundColor: 'var(--product-accent)', color: '#FFFFFF' }

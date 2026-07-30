@@ -3,7 +3,6 @@ import {
   Area,
   CartesianGrid,
   ComposedChart,
-  Legend,
   Line,
   ReferenceLine,
   ResponsiveContainer,
@@ -11,6 +10,13 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import {
+  CHART_AREA,
+  CHART_AXIS,
+  CHART_CURSOR,
+  CHART_GRID,
+  CHART_LINE,
+} from '../../design/chartTheme'
 import { DataBadge } from '../../components/DataBadge'
 import { DegradedBanner } from '../../components/DegradedBanner'
 import { FutureButton } from '../../components/FutureButton'
@@ -94,7 +100,7 @@ function CampaignStrip() {
       {CAMPAIGNS.map((campaign) => (
         <article
           key={campaign.id}
-          className="rounded-card border border-surface-border bg-surface-card px-5 py-4"
+          className="rounded-card border border-surface-border bg-surface-card px-4 py-4"
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
@@ -176,75 +182,86 @@ function DemandForecastChart() {
   }))
 
   return (
-    <div className="h-72 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: -4 }}>
-          <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            dataKey="label"
-            tickLine={false}
-            axisLine={{ stroke: '#E2E8F0' }}
-            tick={{ fill: '#64748B', fontSize: 12 }}
+    <div>
+      <div className="mb-2 flex flex-wrap gap-4 text-micro uppercase text-neutral">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: BAND_COLOR }} aria-hidden />
+          Faixa de incerteza
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="h-2 w-2 rounded-sm"
+            style={{ backgroundColor: FORECAST_COLOR }}
+            aria-hidden
           />
-          <YAxis
-            width={56}
-            tickLine={false}
-            axisLine={false}
-            tick={{ fill: '#64748B', fontSize: 12 }}
-            tickFormatter={(value: number) => formatInteger(value / 1_000)}
-            label={{
-              value: 'mil amostras',
-              angle: -90,
-              position: 'insideLeft',
-              fill: '#64748B',
-              fontSize: 11,
-            }}
+          Demanda prevista
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="h-2 w-2 rounded-sm"
+            style={{ backgroundColor: ACTUAL_COLOR }}
+            aria-hidden
           />
-          <Tooltip content={<ForecastTooltip />} cursor={{ stroke: '#CBD5E1' }} />
-          <Legend
-            verticalAlign="top"
-            align="right"
-            iconType="plainline"
-            wrapperStyle={{ fontSize: 12, color: '#64748B', paddingBottom: 8 }}
-          />
-          {CURRENT_CYCLE ? (
-            <ReferenceLine
-              x={CURRENT_CYCLE.label}
-              stroke="#94A3B8"
-              strokeDasharray="4 4"
-              label={{ value: 'ciclo em execução', fill: '#64748B', fontSize: 11, position: 'top' }}
+          Entregue
+        </span>
+      </div>
+      <div className="h-72 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: -4 }}>
+            <CartesianGrid {...CHART_GRID} />
+            <XAxis {...CHART_AXIS} dataKey="label" />
+            <YAxis
+              {...CHART_AXIS}
+              width={56}
+              tickFormatter={(value: number) => formatInteger(value / 1_000)}
+              label={{
+                value: 'mil amostras',
+                angle: -90,
+                position: 'insideLeft',
+                fill: '#64748B',
+                fontSize: 11,
+              }}
             />
-          ) : null}
-          <Area
-            dataKey="banda"
-            name="Faixa de incerteza"
-            stroke="none"
-            fill={BAND_COLOR}
-            fillOpacity={0.55}
-            isAnimationActive={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="previsto"
-            name="Demanda prevista"
-            stroke={FORECAST_COLOR}
-            strokeWidth={2.5}
-            dot={{ r: 3, fill: FORECAST_COLOR, strokeWidth: 0 }}
-            isAnimationActive={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="realizado"
-            name="Entregue"
-            stroke={ACTUAL_COLOR}
-            strokeWidth={2}
-            strokeDasharray="6 4"
-            dot={{ r: 3, fill: ACTUAL_COLOR, strokeWidth: 0 }}
-            connectNulls={false}
-            isAnimationActive={false}
-          />
-        </ComposedChart>
-      </ResponsiveContainer>
+            <Tooltip content={<ForecastTooltip />} cursor={CHART_CURSOR} />
+            {CURRENT_CYCLE ? (
+              <ReferenceLine
+                x={CURRENT_CYCLE.label}
+                stroke="#94A3B8"
+                strokeDasharray="4 4"
+                label={{ value: 'ciclo em execução', fill: '#64748B', fontSize: 11, position: 'top' }}
+              />
+            ) : null}
+            <Area
+              {...CHART_AREA}
+              dataKey="banda"
+              name="Faixa de incerteza"
+              stroke="none"
+              fill={BAND_COLOR}
+              fillOpacity={0.55}
+              isAnimationActive={false}
+            />
+            <Line
+              {...CHART_LINE}
+              type="monotone"
+              dataKey="previsto"
+              name="Demanda prevista"
+              stroke={FORECAST_COLOR}
+              strokeWidth={2.5}
+              isAnimationActive={false}
+            />
+            <Line
+              {...CHART_LINE}
+              type="monotone"
+              dataKey="realizado"
+              name="Entregue"
+              stroke={ACTUAL_COLOR}
+              strokeDasharray="6 4"
+              connectNulls={false}
+              isAnimationActive={false}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }

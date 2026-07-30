@@ -64,7 +64,7 @@ export function OpportunityMap() {
                 disabled={isDisabled}
                 onClick={() => setGranularity(option.id)}
                 title={isDisabled ? `${option.label} — ${option.phase}` : option.label}
-                className={`rounded-[10px] px-3 py-1 text-delta font-medium transition-colors ${
+                className={`rounded-control px-3 py-1 text-delta font-medium transition-colors ${
                   isDisabled ? 'cursor-not-allowed text-slate-300' : 'text-slate-600 hover:bg-slate-50'
                 }`}
                 style={isActive ? { backgroundColor: 'var(--product-accent)', color: '#FFFFFF' } : undefined}

@@ -4,6 +4,7 @@ import { FutureButton } from '../../components/FutureButton'
 import { KpiCard } from '../../components/KpiCard'
 import { Panel } from '../../components/Panel'
 import { StateChip } from '../../components/StateChip'
+import { ICON_SIZE, ICON_STROKE, iconUi } from '../../design/icons'
 import { semanticColor } from '../../design/tokens'
 import { formatInteger, formatPercent } from '../../domain/format'
 import { formatDate } from '../../domain/today'
@@ -89,7 +90,7 @@ function EvidenceLegend() {
 
 function FieldForceContext() {
   return (
-    <div className="rounded-card border border-surface-border bg-surface-card px-5 py-4">
+    <div className="rounded-card border border-surface-border bg-surface-card p-4">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="text-kpi tabular-nums text-slate-900">
           {formatInteger(FIELD_FORCE.peopleInField)}
@@ -505,16 +506,21 @@ function FieldAppFrame() {
                 <ul className="mt-2 space-y-1.5">
                   {MOBILE_APP.checklist.map((item) => (
                     <li key={item.id} className="flex items-start gap-2">
-                      <span
-                        className="mt-px flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border text-[9px] leading-none text-white"
-                        style={
-                          item.done
-                            ? { backgroundColor: PROVEN_COLOR, borderColor: PROVEN_COLOR }
-                            : { borderColor: '#CBD5E1' }
-                        }
-                      >
-                        {item.done ? '✓' : ''}
-                      </span>
+                      {item.done ? (
+                        <iconUi.ok
+                          size={ICON_SIZE.sm}
+                          strokeWidth={ICON_STROKE}
+                          className="mt-px shrink-0"
+                          style={{ color: PROVEN_COLOR }}
+                          aria-hidden
+                        />
+                      ) : (
+                        <span
+                          className="mt-px h-3.5 w-3.5 shrink-0 rounded-[4px] border"
+                          style={{ borderColor: '#CBD5E1' }}
+                          aria-hidden
+                        />
+                      )}
                       <span
                         className={`text-delta leading-snug ${
                           item.done ? 'text-neutral line-through' : 'text-slate-800'

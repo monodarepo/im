@@ -9,6 +9,13 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import {
+  CHART_AXIS,
+  CHART_BAR,
+  CHART_CURSOR,
+  CHART_GRID,
+  CHART_TOOLTIP_STYLE,
+} from '../../design/chartTheme'
 import { DataBadge } from '../../components/DataBadge'
 import { FutureButton } from '../../components/FutureButton'
 import { KpiCard } from '../../components/KpiCard'
@@ -331,28 +338,21 @@ function CycleChart() {
           data={[...CYCLE_TRACEABILITY]}
           margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
         >
-          <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            dataKey="label"
-            tickLine={false}
-            axisLine={{ stroke: '#E2E8F0' }}
-            tick={{ fill: '#64748B', fontSize: 12 }}
-          />
+          <CartesianGrid {...CHART_GRID} />
+          <XAxis {...CHART_AXIS} dataKey="label" />
           <YAxis
+            {...CHART_AXIS}
             width={48}
             domain={[80, 100]}
             ticks={[80, 85, 90, 95, 100]}
-            tickLine={false}
-            axisLine={false}
-            tick={{ fill: '#64748B', fontSize: 12 }}
             tickFormatter={(value: number) => formatPercent(value, 0)}
           />
           <Tooltip
-            cursor={{ fill: '#F1F5F9' }}
+            cursor={CHART_CURSOR}
             formatter={(value: number) => [formatPercent(value, 1), 'Trilhas íntegras']}
-            contentStyle={{ fontSize: 12, borderRadius: 12, borderColor: '#E2E8F0' }}
+            contentStyle={CHART_TOOLTIP_STYLE}
           />
-          <Bar dataKey="traceabilityPercent" fill={CYCLE_BAR_COLOR} radius={[4, 4, 0, 0]} />
+          <Bar {...CHART_BAR} dataKey="traceabilityPercent" fill={CYCLE_BAR_COLOR} />
         </BarChart>
       </ResponsiveContainer>
     </div>

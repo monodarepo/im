@@ -1,6 +1,5 @@
 import {
   CartesianGrid,
-  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -8,6 +7,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { CHART_AXIS, CHART_CURSOR, CHART_GRID, CHART_LINE } from '../../design/chartTheme'
 import { DataBadge } from '../../components/DataBadge'
 import { DegradedBanner } from '../../components/DegradedBanner'
 import { Panel } from '../../components/Panel'
@@ -187,45 +187,39 @@ function ReliabilityTooltip({
 
 function ReliabilityChart() {
   return (
-    <div className="h-64 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={[...RELIABILITY_SERIES]} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-          <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            dataKey="label"
-            tickLine={false}
-            axisLine={{ stroke: '#E2E8F0' }}
-            tick={{ fill: '#64748B', fontSize: 11 }}
-            interval={4}
-          />
-          <YAxis
-            width={44}
-            domain={[50, 100]}
-            ticks={[50, 60, 70, 80, 90, 100]}
-            tickLine={false}
-            axisLine={false}
-            tick={{ fill: '#64748B', fontSize: 12 }}
-          />
-          <Tooltip content={<ReliabilityTooltip />} cursor={{ stroke: '#CBD5E1' }} />
-          <Legend
-            verticalAlign="top"
-            align="right"
-            iconType="plainline"
-            wrapperStyle={{ fontSize: 12, color: '#64748B', paddingBottom: 8 }}
-          />
-          {RELIABILITY_SOURCES.map((source) => (
-            <Line
-              key={source.key}
-              type="monotone"
-              dataKey={source.key}
-              name={source.label}
-              stroke={RELIABILITY_COLORS[source.key]}
-              strokeWidth={2}
-              dot={false}
+    <div>
+      <div className="mb-2 flex flex-wrap gap-4 text-micro uppercase text-neutral">
+        {RELIABILITY_SOURCES.map((source) => (
+          <span key={source.key} className="inline-flex items-center gap-1.5">
+            <span
+              className="h-2 w-2 rounded-sm"
+              style={{ backgroundColor: RELIABILITY_COLORS[source.key] }}
+              aria-hidden
             />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
+            {source.label}
+          </span>
+        ))}
+      </div>
+      <div className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={[...RELIABILITY_SERIES]} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <CartesianGrid {...CHART_GRID} />
+            <XAxis {...CHART_AXIS} dataKey="label" interval={4} />
+            <YAxis {...CHART_AXIS} width={44} domain={[50, 100]} ticks={[50, 60, 70, 80, 90, 100]} />
+            <Tooltip content={<ReliabilityTooltip />} cursor={CHART_CURSOR} />
+            {RELIABILITY_SOURCES.map((source) => (
+              <Line
+                {...CHART_LINE}
+                key={source.key}
+                type="monotone"
+                dataKey={source.key}
+                name={source.label}
+                stroke={RELIABILITY_COLORS[source.key]}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }

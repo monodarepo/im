@@ -1,6 +1,5 @@
 import {
   CartesianGrid,
-  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -8,6 +7,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { CHART_AXIS, CHART_CURSOR, CHART_GRID, CHART_LINE } from '../design/chartTheme'
 import { formatDecimal } from '../domain/format'
 import { formatMoney } from '../domain/money'
 import { SELLOUT_SERIES } from '../mock/sellout'
@@ -88,58 +88,56 @@ export function SelloutChart() {
   const ticks = Array.from({ length: ceiling / step + 1 }, (_, index) => index * step)
 
   return (
-    <div className="h-full min-h-[280px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-          <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            dataKey="label"
-            tickLine={false}
-            axisLine={{ stroke: '#E2E8F0' }}
-            tick={{ fill: '#64748B', fontSize: 12 }}
-          />
-          <YAxis
-            width={56}
-            domain={[0, ceiling]}
-            ticks={ticks}
-            tickLine={false}
-            axisLine={false}
-            tick={<AxisTickMoney />}
-            label={{
-              value: 'R$ milhões',
-              angle: -90,
-              position: 'insideLeft',
-              fill: '#64748B',
-              fontSize: 12,
-            }}
-          />
-          <Tooltip content={<SelloutTooltip />} cursor={{ stroke: '#CBD5E1' }} />
-          <Legend
-            verticalAlign="top"
-            align="right"
-            iconType="plainline"
-            wrapperStyle={{ fontSize: 12, color: '#64748B', paddingBottom: 8 }}
-          />
-          <Line
-            type="monotone"
-            dataKey="anterior"
-            name="7 dias anteriores"
-            stroke={PREVIOUS_COLOR}
-            strokeWidth={2}
-            strokeDasharray="6 4"
-            dot={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="atual"
-            name="Período atual"
-            stroke={CURRENT_COLOR}
-            strokeWidth={2.5}
-            dot={{ r: 3, fill: CURRENT_COLOR, strokeWidth: 0 }}
-            activeDot={{ r: 5 }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+    <div className="flex h-full min-h-[280px] w-full flex-col">
+      <div className="mb-2 flex gap-4 text-micro uppercase text-neutral">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: CURRENT_COLOR }} aria-hidden />
+          Período atual
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: PREVIOUS_COLOR }} aria-hidden />
+          7 dias anteriores
+        </span>
+      </div>
+      <div className="min-h-0 flex-1">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <CartesianGrid {...CHART_GRID} />
+            <XAxis {...CHART_AXIS} dataKey="label" />
+            <YAxis
+              {...CHART_AXIS}
+              width={56}
+              domain={[0, ceiling]}
+              ticks={ticks}
+              tick={<AxisTickMoney />}
+              label={{
+                value: 'R$ milhões',
+                angle: -90,
+                position: 'insideLeft',
+                fill: '#64748B',
+                fontSize: 12,
+              }}
+            />
+            <Tooltip content={<SelloutTooltip />} cursor={CHART_CURSOR} />
+            <Line
+              {...CHART_LINE}
+              type="monotone"
+              dataKey="anterior"
+              name="7 dias anteriores"
+              stroke={PREVIOUS_COLOR}
+              strokeDasharray="6 4"
+            />
+            <Line
+              {...CHART_LINE}
+              type="monotone"
+              dataKey="atual"
+              name="Período atual"
+              stroke={CURRENT_COLOR}
+              strokeWidth={2.5}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }

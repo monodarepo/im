@@ -2,7 +2,6 @@ import {
   Area,
   CartesianGrid,
   ComposedChart,
-  Legend,
   Line,
   ReferenceArea,
   ReferenceLine,
@@ -11,6 +10,13 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import {
+  CHART_AREA,
+  CHART_AXIS,
+  CHART_CURSOR,
+  CHART_GRID,
+  CHART_LINE,
+} from '../../design/chartTheme'
 import { DataBadge } from '../../components/DataBadge'
 import { FutureButton } from '../../components/FutureButton'
 import { Panel } from '../../components/Panel'
@@ -234,93 +240,98 @@ function ForecastChart() {
   const ticks = Array.from({ length: ceiling / step + 1 }, (_, index) => index * step)
 
   return (
-    <div className="h-72 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-          <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" vertical={false} />
+    <div>
+      <div className="mb-2 flex flex-wrap gap-4 text-micro uppercase text-neutral">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: OBSERVED_INK }} aria-hidden />
+          Observado
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: BAND_INK }} aria-hidden />
+          Projeção (mediana)
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="h-2 w-2 rounded-sm"
+            style={{ backgroundColor: BAND_INK, opacity: 0.35 }}
+            aria-hidden
+          />
+          Faixa de confiança
+        </span>
+      </div>
+      <div className="h-72 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <CartesianGrid {...CHART_GRID} />
 
-          <XAxis
-            dataKey="label"
-            tickLine={false}
-            axisLine={{ stroke: '#E2E8F0' }}
-            tick={{ fill: '#64748B', fontSize: 11 }}
-          />
-          <YAxis
-            width={56}
-            domain={[0, ceiling]}
-            ticks={ticks}
-            tickLine={false}
-            axisLine={false}
-            tick={<AxisTickMoney />}
-            label={{
-              value: 'R$ milhões',
-              angle: -90,
-              position: 'insideLeft',
-              fill: '#64748B',
-              fontSize: 12,
-            }}
-          />
+            <XAxis {...CHART_AXIS} dataKey="label" />
+            <YAxis
+              {...CHART_AXIS}
+              width={56}
+              domain={[0, ceiling]}
+              ticks={ticks}
+              tick={<AxisTickMoney />}
+              label={{
+                value: 'R$ milhões',
+                angle: -90,
+                position: 'insideLeft',
+                fill: '#64748B',
+                fontSize: 12,
+              }}
+            />
 
-          <ReferenceArea
-            x1={FORECAST_FIRST_LABEL}
-            x2={FORECAST_LAST_LABEL}
-            fill={BAND_INK}
-            fillOpacity={0.07}
-          />
-          <ReferenceLine
-            x={FORECAST_BOUNDARY_LABEL}
-            stroke={BAND_INK}
-            strokeDasharray="4 4"
-            label={{
-              value: 'fim do observado',
-              position: 'insideTopRight',
-              fill: '#64748B',
-              fontSize: 11,
-            }}
-          />
+            <ReferenceArea
+              x1={FORECAST_FIRST_LABEL}
+              x2={FORECAST_LAST_LABEL}
+              fill={BAND_INK}
+              fillOpacity={0.07}
+            />
+            <ReferenceLine
+              x={FORECAST_BOUNDARY_LABEL}
+              stroke={BAND_INK}
+              strokeDasharray="4 4"
+              label={{
+                value: 'fim do observado',
+                position: 'insideTopRight',
+                fill: '#64748B',
+                fontSize: 11,
+              }}
+            />
 
-          <Tooltip content={<ForecastTooltip />} cursor={{ stroke: '#CBD5E1' }} />
-          <Legend
-            verticalAlign="top"
-            align="right"
-            wrapperStyle={{ fontSize: 12, color: '#64748B', paddingBottom: 8 }}
-          />
+            <Tooltip content={<ForecastTooltip />} cursor={CHART_CURSOR} />
 
-          <Area
-            type="monotone"
-            dataKey="faixa"
-            name="Faixa de confiança"
-            stroke="none"
-            fill={BAND_INK}
-            fillOpacity={0.22}
-            isAnimationActive={false}
-            connectNulls={false}
-            legendType="rect"
-          />
-          <Line
-            type="monotone"
-            dataKey="observado"
-            name="Observado"
-            stroke={OBSERVED_INK}
-            strokeWidth={2.5}
-            dot={{ r: 2.5, fill: OBSERVED_INK, strokeWidth: 0 }}
-            activeDot={{ r: 5 }}
-            connectNulls={false}
-            legendType="plainline"
-          />
-          <Line
-            type="monotone"
-            dataKey="projetado"
-            name="Projeção (mediana)"
-            stroke={BAND_INK}
-            strokeWidth={2}
-            strokeDasharray="6 4"
-            dot={false}
-            connectNulls={false}
-            legendType="plainline"
-          />
-        </ComposedChart>
-      </ResponsiveContainer>
+            <Area
+              {...CHART_AREA}
+              type="monotone"
+              dataKey="faixa"
+              name="Faixa de confiança"
+              stroke="none"
+              fill={BAND_INK}
+              fillOpacity={0.22}
+              isAnimationActive={false}
+              connectNulls={false}
+            />
+            <Line
+              {...CHART_LINE}
+              type="monotone"
+              dataKey="observado"
+              name="Observado"
+              stroke={OBSERVED_INK}
+              strokeWidth={2.5}
+              connectNulls={false}
+            />
+            <Line
+              {...CHART_LINE}
+              type="monotone"
+              dataKey="projetado"
+              name="Projeção (mediana)"
+              stroke={BAND_INK}
+              strokeDasharray="6 4"
+              connectNulls={false}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }

@@ -201,7 +201,7 @@ function TerritoryHeatmap({ selected }: { selected: ReadonlySet<UfCode> }) {
                 onClick={() => setLayerId(option.id)}
                 title={option.description}
                 aria-pressed={isActive}
-                className={`rounded-[10px] px-3 py-1 text-delta font-medium transition-colors ${
+                className={`rounded-control px-3 py-1 text-delta font-medium transition-colors ${
                   isActive ? '' : 'text-slate-600 hover:bg-slate-50'
                 }`}
                 style={

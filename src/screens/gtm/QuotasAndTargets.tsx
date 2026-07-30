@@ -5,6 +5,7 @@ import { KpiCard } from '../../components/KpiCard'
 import { Panel } from '../../components/Panel'
 import { SemanticDelta } from '../../components/SemanticDelta'
 import { StateChip } from '../../components/StateChip'
+import { ICON_SIZE, ICON_STROKE, iconUi } from '../../design/icons'
 import { SEMANTIC, semanticColor, toneForDelta } from '../../design/tokens'
 import { formatInteger, formatPercent, formatPointsDelta } from '../../domain/format'
 import { formatMoney, formatMoneyFull } from '../../domain/money'
@@ -93,9 +94,21 @@ function RollupRow({ node, level, expandable, expanded, onToggle }: RollupRowPro
             aria-expanded={expanded}
             className={`inline-flex items-center gap-2 text-delta-lg ${weight}`}
           >
-            <span aria-hidden className="text-neutral">
-              {expanded ? '▾' : '▸'}
-            </span>
+            {expanded ? (
+              <iconUi.chevronDown
+                size={ICON_SIZE.sm}
+                strokeWidth={ICON_STROKE}
+                className="shrink-0 text-neutral"
+                aria-hidden
+              />
+            ) : (
+              <iconUi.chevronRight
+                size={ICON_SIZE.sm}
+                strokeWidth={ICON_STROKE}
+                className="shrink-0 text-neutral"
+                aria-hidden
+              />
+            )}
             {node.label}
           </button>
         ) : (

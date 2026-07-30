@@ -3,13 +3,20 @@ import {
   Bar,
   CartesianGrid,
   ComposedChart,
-  Legend,
   Line,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts'
+import {
+  CHART_AXIS,
+  CHART_BAR,
+  CHART_CURSOR,
+  CHART_GRID,
+  CHART_LINE,
+  CHART_TOOLTIP_STYLE,
+} from '../../design/chartTheme'
 import { DataBadge } from '../../components/DataBadge'
 import { DegradedBanner } from '../../components/DegradedBanner'
 import { FutureButton } from '../../components/FutureButton'
@@ -116,7 +123,7 @@ function BlockedLotSpotlight({ lot }: { lot: Lot }) {
   return (
     <div
       role="status"
-      className="rounded-card border px-5 py-4"
+      className="rounded-card border px-4 py-4"
       style={{ borderColor: `${SEMANTIC.negative}66`, backgroundColor: `${SEMANTIC.negative}0D` }}
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -264,39 +271,51 @@ function BalanceChart() {
   }))
 
   return (
-    <div className="h-[280px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-          <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            dataKey="label"
-            tickLine={false}
-            axisLine={{ stroke: '#E2E8F0' }}
-            tick={{ fill: '#64748B', fontSize: 12 }}
+    <div>
+      <div className="mb-2 flex flex-wrap gap-4 text-micro uppercase text-neutral">
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="h-2 w-2 rounded-sm"
+            style={{ backgroundColor: BALANCE_COLOR }}
+            aria-hidden
           />
-          <YAxis
-            tickLine={false}
-            axisLine={false}
-            width={64}
-            tick={{ fill: '#64748B', fontSize: 12 }}
-            tickFormatter={(value: number) => formatInteger(value)}
+          Saldo em estoque
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="h-2 w-2 rounded-sm"
+            style={{ backgroundColor: SEMANTIC.negative }}
+            aria-hidden
           />
-          <Tooltip
-            formatter={(value: number, name: string) => [formatInteger(value), name]}
-            contentStyle={{ fontSize: 12, borderRadius: 12, borderColor: '#E2E8F0' }}
-          />
-          <Legend wrapperStyle={{ fontSize: 12 }} />
-          <Bar dataKey="units" name="Saldo em estoque" fill={BALANCE_COLOR} radius={[4, 4, 0, 0]} />
-          <Line
-            type="monotone"
-            dataKey="unitsAtRisk"
-            name="Unidades em risco"
-            stroke={SEMANTIC.negative}
-            strokeWidth={2}
-            dot={{ r: 3 }}
-          />
-        </ComposedChart>
-      </ResponsiveContainer>
+          Unidades em risco
+        </span>
+      </div>
+      <div className="h-[280px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <CartesianGrid {...CHART_GRID} />
+            <XAxis {...CHART_AXIS} dataKey="label" />
+            <YAxis
+              {...CHART_AXIS}
+              width={64}
+              tickFormatter={(value: number) => formatInteger(value)}
+            />
+            <Tooltip
+              formatter={(value: number, name: string) => [formatInteger(value), name]}
+              contentStyle={CHART_TOOLTIP_STYLE}
+              cursor={CHART_CURSOR}
+            />
+            <Bar {...CHART_BAR} dataKey="units" name="Saldo em estoque" fill={BALANCE_COLOR} />
+            <Line
+              {...CHART_LINE}
+              type="monotone"
+              dataKey="unitsAtRisk"
+              name="Unidades em risco"
+              stroke={SEMANTIC.negative}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }

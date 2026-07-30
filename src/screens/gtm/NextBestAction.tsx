@@ -7,6 +7,7 @@ import { SemanticDelta } from '../../components/SemanticDelta'
 import { StateChip } from '../../components/StateChip'
 import { formatInteger, formatPercent } from '../../domain/format'
 import { formatMoney } from '../../domain/money'
+import { ICON_SIZE, ICON_STROKE, iconUi } from '../../design/icons'
 import { SEMANTIC, semanticColor } from '../../design/tokens'
 import type { SemanticTone } from '../../design/tokens'
 import { POTENTIAL_TIER_LABEL, SPECIALTY_LABEL, type Doctor } from '../../mock/doctors'
@@ -143,7 +144,7 @@ function RationaleDrawer({
             aria-label="Fechar detalhe"
             className="flex h-8 w-8 items-center justify-center rounded-control text-neutral hover:bg-slate-50"
           >
-            <span aria-hidden>✕</span>
+            <iconUi.close size={ICON_SIZE.md} strokeWidth={ICON_STROKE} aria-hidden />
           </button>
         </header>
 

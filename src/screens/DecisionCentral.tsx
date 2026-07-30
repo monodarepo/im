@@ -77,7 +77,7 @@ export function DecisionCentral() {
                 onClick={() => setView(option.id)}
                 aria-pressed={isActive}
                 title={option.description}
-                className="rounded-[10px] px-3 py-1.5 text-delta font-medium transition-colors"
+                className="rounded-control px-3 py-1.5 text-delta font-medium transition-colors"
                 style={
                   isActive
                     ? { backgroundColor: 'var(--product-accent)', color: '#FFFFFF' }

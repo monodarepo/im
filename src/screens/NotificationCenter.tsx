@@ -132,7 +132,7 @@ export function NotificationCenter() {
 
 function AlertCard({ alert }: { alert: Alert }) {
   return (
-    <li className="rounded-card border border-surface-border bg-surface-card px-5 py-4">
+    <li className="rounded-card border border-surface-border bg-surface-card px-4 py-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <StateChip label={SEVERITY_LABEL[alert.severity]} tone={SEVERITY_TONE[alert.severity]} />

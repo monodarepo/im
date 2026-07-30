@@ -4,12 +4,12 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts'
+import { CHART_AXIS, CHART_BAR, CHART_CURSOR, CHART_GRID } from '../../design/chartTheme'
 import { UF_NAME } from '../../assets/brazil-uf'
 import { DataBadge } from '../../components/DataBadge'
 import { FutureButton } from '../../components/FutureButton'
@@ -115,42 +115,47 @@ function CoverageChart({ rows }: { rows: readonly SpecialtyRow[] }) {
   }))
 
   return (
-    <div className="h-[260px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-          <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" horizontal={false} />
-          <XAxis
-            type="number"
-            tickLine={false}
-            axisLine={{ stroke: '#E2E8F0' }}
-            tick={{ fill: '#64748B', fontSize: 12 }}
-            tickFormatter={(value: number) => formatInteger(value)}
-          />
-          <YAxis
-            type="category"
-            dataKey="label"
-            width={104}
-            tickLine={false}
-            axisLine={false}
-            tick={{ fill: '#475569', fontSize: 12 }}
-          />
-          <Tooltip content={<CoverageTooltip />} cursor={{ fill: '#F1F5F9' }} />
-          <Legend
-            verticalAlign="top"
-            align="right"
-            iconType="square"
-            wrapperStyle={{ fontSize: 12, color: '#64748B', paddingBottom: 8 }}
-          />
-          <Bar dataKey="covered" name="Médicos cobertos" stackId="doctors" fill={COVERED_COLOR} />
-          <Bar
-            dataKey="uncovered"
-            name="Médicos não cobertos"
-            stackId="doctors"
-            fill={GAP_COLOR}
-            radius={[0, 4, 4, 0]}
-          />
-        </BarChart>
-      </ResponsiveContainer>
+    <div>
+      <div className="mb-2 flex gap-4 text-micro uppercase text-neutral">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: COVERED_COLOR }} aria-hidden />
+          Médicos cobertos
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: GAP_COLOR }} aria-hidden />
+          Médicos não cobertos
+        </span>
+      </div>
+      <div className="h-[260px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} layout="vertical" margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+            <CartesianGrid {...CHART_GRID} vertical horizontal={false} />
+            <XAxis
+              {...CHART_AXIS}
+              type="number"
+              tickFormatter={(value: number) => formatInteger(value)}
+            />
+            <YAxis {...CHART_AXIS} type="category" dataKey="label" width={104} />
+            <Tooltip content={<CoverageTooltip />} cursor={CHART_CURSOR} />
+            <Bar
+              {...CHART_BAR}
+              dataKey="covered"
+              name="Médicos cobertos"
+              stackId="doctors"
+              fill={COVERED_COLOR}
+              radius={[0, 0, 0, 0]}
+            />
+            <Bar
+              {...CHART_BAR}
+              dataKey="uncovered"
+              name="Médicos não cobertos"
+              stackId="doctors"
+              fill={GAP_COLOR}
+              radius={[0, 2, 2, 0]}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }

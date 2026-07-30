@@ -4,12 +4,18 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts'
+import {
+  CHART_AXIS,
+  CHART_BAR,
+  CHART_CURSOR,
+  CHART_GRID,
+  CHART_TOOLTIP_STYLE,
+} from '../../design/chartTheme'
 import { DataBadge } from '../../components/DataBadge'
 import { DegradedBanner } from '../../components/DegradedBanner'
 import { FutureButton } from '../../components/FutureButton'
@@ -132,7 +138,7 @@ function SuggestionCard({
 
   return (
     <li
-      className="rounded-card border border-surface-border bg-surface-card p-5"
+      className="rounded-card border border-surface-border bg-surface-card p-4"
       style={
         rank === 1 ? { borderLeftWidth: 3, borderLeftColor: 'var(--product-accent)' } : undefined
       }
@@ -334,41 +340,45 @@ function LossChart() {
   }))
 
   return (
-    <div className="h-64 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} barGap={4} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
-          <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            dataKey="label"
-            tickLine={false}
-            axisLine={{ stroke: '#E2E8F0' }}
-            tick={{ fill: '#64748B', fontSize: 12 }}
+    <div>
+      <div className="mb-2 flex flex-wrap gap-4 text-micro uppercase text-neutral">
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="h-2 w-2 rounded-sm"
+            style={{ backgroundColor: AVOIDED_COLOR }}
+            aria-hidden
           />
-          <YAxis
-            tickLine={false}
-            axisLine={false}
-            width={70}
-            tick={{ fill: '#64748B', fontSize: 12 }}
-            tickFormatter={(value: number) => formatMoney(value, 0)}
+          Perda evitada
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="h-2 w-2 rounded-sm"
+            style={{ backgroundColor: REALIZED_COLOR }}
+            aria-hidden
           />
-          <Tooltip
-            cursor={{ fill: '#F1F5F9' }}
-            formatter={(value: number, name: string) => [formatMoneyFull(value), name]}
-            contentStyle={{ fontSize: 12, borderRadius: 12, borderColor: '#E2E8F0' }}
-          />
-          <Legend
-            iconType="square"
-            wrapperStyle={{ fontSize: 12, color: '#64748B', paddingTop: 8 }}
-          />
-          <Bar dataKey="evitada" name="Perda evitada" fill={AVOIDED_COLOR} radius={[3, 3, 0, 0]} />
-          <Bar
-            dataKey="realizada"
-            name="Perda realizada"
-            fill={REALIZED_COLOR}
-            radius={[3, 3, 0, 0]}
-          />
-        </BarChart>
-      </ResponsiveContainer>
+          Perda realizada
+        </span>
+      </div>
+      <div className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} barGap={4} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
+            <CartesianGrid {...CHART_GRID} />
+            <XAxis {...CHART_AXIS} dataKey="label" />
+            <YAxis
+              {...CHART_AXIS}
+              width={70}
+              tickFormatter={(value: number) => formatMoney(value, 0)}
+            />
+            <Tooltip
+              cursor={CHART_CURSOR}
+              formatter={(value: number, name: string) => [formatMoneyFull(value), name]}
+              contentStyle={CHART_TOOLTIP_STYLE}
+            />
+            <Bar {...CHART_BAR} dataKey="evitada" name="Perda evitada" fill={AVOIDED_COLOR} />
+            <Bar {...CHART_BAR} dataKey="realizada" name="Perda realizada" fill={REALIZED_COLOR} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }

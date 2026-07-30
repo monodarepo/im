@@ -1,4 +1,5 @@
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, XAxis, YAxis } from 'recharts'
+import { CHART_AXIS, CHART_BAR, CHART_GRID } from '../design/chartTheme'
 import { formatPointsDelta } from '../domain/format'
 import { SEMANTIC, semanticColor, toneForDelta } from '../design/tokens'
 import type { WaterfallStep } from '../mock/rootCause'
@@ -21,26 +22,28 @@ export function WaterfallChart({ steps }: { steps: readonly WaterfallStep[] }) {
     <div className="h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 16, right: 8, bottom: 0, left: 0 }}>
-          <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis
+            {...CHART_AXIS}
             dataKey="label"
-            tickLine={false}
-            axisLine={{ stroke: '#E2E8F0' }}
-            tick={{ fill: '#64748B', fontSize: 11 }}
             interval={0}
             angle={-20}
             textAnchor="end"
             height={64}
           />
           <YAxis
+            {...CHART_AXIS}
             width={56}
-            tickLine={false}
-            axisLine={false}
-            tick={{ fill: '#64748B', fontSize: 12 }}
             tickFormatter={(value: number) => formatPointsDelta(value).replace(' pp', '')}
           />
-          <Bar dataKey="base" stackId="waterfall" fill="transparent" isAnimationActive={false} />
-          <Bar dataKey="span" stackId="waterfall" radius={[3, 3, 0, 0]} isAnimationActive={false}>
+          <Bar
+            {...CHART_BAR}
+            dataKey="base"
+            stackId="waterfall"
+            fill="transparent"
+            isAnimationActive={false}
+          />
+          <Bar {...CHART_BAR} dataKey="span" stackId="waterfall" isAnimationActive={false}>
             {data.map((entry) => (
               <Cell
                 key={entry.label}

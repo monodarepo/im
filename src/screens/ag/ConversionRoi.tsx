@@ -1,6 +1,5 @@
 import {
   CartesianGrid,
-  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -8,6 +7,13 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import {
+  CHART_AXIS,
+  CHART_CURSOR,
+  CHART_GRID,
+  CHART_LINE,
+  CHART_TOOLTIP_STYLE,
+} from '../../design/chartTheme'
 import { DataBadge } from '../../components/DataBadge'
 import { KpiCard } from '../../components/KpiCard'
 import { Panel } from '../../components/Panel'
@@ -133,53 +139,54 @@ function Incrementality() {
 
 function SaturationChart() {
   return (
-    <div className="h-72 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={[...SATURATION_CURVE]} margin={{ top: 8, right: 8, bottom: 4, left: -8 }}>
-          <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            dataKey="samplesPerDoctor"
-            tickLine={false}
-            axisLine={{ stroke: '#E2E8F0' }}
-            tick={{ fill: '#64748B', fontSize: 12 }}
-            label={{
-              value: 'amostras por médico',
-              position: 'insideBottom',
-              offset: -2,
-              fill: '#64748B',
-              fontSize: 11,
-            }}
-          />
-          <YAxis
-            tickLine={false}
-            axisLine={false}
-            tick={{ fill: '#64748B', fontSize: 12 }}
-            tickFormatter={(value: number) => formatPercent(value, 0)}
-          />
-          <Tooltip
-            formatter={(value: number, name: string) => [formatPercent(value), name]}
-            labelFormatter={(value: number) => `${formatInteger(value)} amostras por médico`}
-            contentStyle={{ fontSize: 12, borderRadius: 12, borderColor: '#E2E8F0' }}
-          />
-          <Legend
-            verticalAlign="top"
-            align="right"
-            iconType="plainline"
-            wrapperStyle={{ fontSize: 12, color: '#64748B', paddingBottom: 8 }}
-          />
-          {SATURATION_SERIES.map((series) => (
-            <Line
-              key={series.key}
-              type="monotone"
-              dataKey={series.key}
-              name={series.label}
-              stroke={series.color}
-              strokeWidth={2}
-              dot={{ r: 2.5, strokeWidth: 0, fill: series.color }}
+    <div>
+      <div className="mb-2 flex flex-wrap gap-4 text-micro uppercase text-neutral">
+        {SATURATION_SERIES.map((series) => (
+          <span key={series.key} className="inline-flex items-center gap-1.5">
+            <span
+              className="h-2 w-2 rounded-sm"
+              style={{ backgroundColor: series.color }}
+              aria-hidden
             />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
+            {series.label}
+          </span>
+        ))}
+      </div>
+      <div className="h-72 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={[...SATURATION_CURVE]} margin={{ top: 8, right: 8, bottom: 4, left: -8 }}>
+            <CartesianGrid {...CHART_GRID} />
+            <XAxis
+              {...CHART_AXIS}
+              dataKey="samplesPerDoctor"
+              label={{
+                value: 'amostras por médico',
+                position: 'insideBottom',
+                offset: -2,
+                fill: '#64748B',
+                fontSize: 11,
+              }}
+            />
+            <YAxis {...CHART_AXIS} tickFormatter={(value: number) => formatPercent(value, 0)} />
+            <Tooltip
+              formatter={(value: number, name: string) => [formatPercent(value), name]}
+              labelFormatter={(value: number) => `${formatInteger(value)} amostras por médico`}
+              contentStyle={CHART_TOOLTIP_STYLE}
+              cursor={CHART_CURSOR}
+            />
+            {SATURATION_SERIES.map((series) => (
+              <Line
+                {...CHART_LINE}
+                key={series.key}
+                type="monotone"
+                dataKey={series.key}
+                name={series.label}
+                stroke={series.color}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }
