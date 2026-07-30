@@ -13,7 +13,10 @@ import type { ProductId, ThemeId } from '../design/tokens'
  */
 
 export type RouteEntry = {
+  /** Padrão de rota, no formato do React Router. */
   readonly path: string
+  /** Destino do link de navegação quando `path` tem parâmetro. */
+  readonly navPath?: string
   readonly title: string
   /** Rótulo do módulo no ESCOPO, ex.: `HUB 1.3`. */
   readonly badge: string
@@ -66,9 +69,28 @@ export const ROUTES: readonly RouteEntry[] = [
     filters: ['period', 'bu', 'brand', 'product', 'molecule', 'channel', 'customer', 'region'],
   },
   {
+    path: '/hub/produto/:skuId',
+    navPath: '/hub/produto/losartana-50-30',
+    title: 'Produto 360°',
+    badge: 'HUB 1.3',
+    theme: 'hub',
+    product: 'hub',
+    features: [],
+    filters: ['period', 'bu', 'brand', 'product', 'molecule', 'channel', 'region'],
+  },
+  {
+    path: '/hub/qualidade',
+    title: 'Qualidade dos Dados',
+    badge: 'HUB 1.10',
+    theme: 'hub',
+    product: 'hub',
+    features: [],
+    filters: ['period'],
+  },
+  {
     path: '/hub/causa-raiz',
     title: 'Diagnóstico de Causa Raiz',
-    badge: 'HUB',
+    badge: 'HUB 1.9',
     theme: 'hub',
     product: 'hub',
     features: [],

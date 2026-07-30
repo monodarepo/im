@@ -2,7 +2,10 @@ import type { ReactElement } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ROUTES } from './routes/registry'
 import { DecisionDetail } from './screens/DecisionDetail'
+import { DataQuality } from './screens/hub/DataQuality'
 import { MarketOverview } from './screens/hub/MarketOverview'
+import { Product360 } from './screens/hub/Product360'
+import { RootCause } from './screens/hub/RootCause'
 import { AppShell } from './shell/AppShell'
 import { ScreenPlaceholder } from './shell/ScreenPlaceholder'
 
@@ -12,6 +15,9 @@ import { ScreenPlaceholder } from './shell/ScreenPlaceholder'
  */
 const SCREENS: Record<string, ReactElement> = {
   '/hub': <MarketOverview />,
+  '/hub/produto/:skuId': <Product360 />,
+  '/hub/causa-raiz': <RootCause />,
+  '/hub/qualidade': <DataQuality />,
 }
 
 export function App() {

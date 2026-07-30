@@ -3,8 +3,11 @@ import { FutureButton } from '../components/FutureButton'
 import { Panel } from '../components/Panel'
 import { StateChip } from '../components/StateChip'
 import { formatMoney } from '../domain/money'
+import { formatRelative } from '../domain/today'
+import { PRODUCTS } from '../design/tokens'
 import { findDecision } from '../mock/decisions'
 import { OPPORTUNITIES } from '../mock/opportunities'
+import { useDecisions } from '../state/decisionsStore'
 
 /**
  * Detalhe da Decisão.
@@ -16,6 +19,9 @@ export function DecisionDetail() {
   const { decisionId = '' } = useParams()
   const decision = findDecision(decisionId)
   const origin = OPPORTUNITIES.find((opportunity) => opportunity.decisionId === decisionId)
+  const links = useDecisions((state) => state.links).filter(
+    (link) => link.decisionId === decisionId,
+  )
 
   if (!decision) {
     return (
@@ -48,6 +54,34 @@ export function DecisionDetail() {
             Originada da oportunidade #{origin.rank} do HUB.
           </p>
         ) : null}
+      </Panel>
+
+      <Panel
+        title="Encaminhamentos"
+        description="Vínculos criados a partir do diagnóstico de causa-raiz"
+      >
+        {links.length > 0 ? (
+          <ul className="divide-y divide-surface-border">
+            {links.map((link) => (
+              <li key={link.target} className="flex items-center gap-3 py-2.5">
+                <span
+                  className="rounded-control px-2 py-0.5 text-delta font-medium text-white"
+                  style={{ backgroundColor: PRODUCTS[link.target].accent }}
+                >
+                  {PRODUCTS[link.target].shortName}
+                </span>
+                <span className="text-delta-lg text-slate-700">{link.reason}</span>
+                <span className="ml-auto text-delta text-neutral">
+                  {formatRelative(link.createdOn)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-delta-lg text-neutral">
+            Nenhum encaminhamento ainda. O diagnóstico de causa-raiz cria os vínculos.
+          </p>
+        )}
       </Panel>
 
       <Panel

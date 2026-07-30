@@ -46,7 +46,12 @@ export function Sidebar() {
 
       <nav aria-label="Módulos" className="flex-1 space-y-0.5 overflow-y-auto px-2">
         {modules.map((route) => (
-          <ModuleLink key={route.path} to={route.path} title={route.title} badge={route.badge} />
+          <ModuleLink
+            key={route.path}
+            to={route.navPath ?? route.path}
+            title={route.title}
+            badge={route.badge}
+          />
         ))}
       </nav>
 

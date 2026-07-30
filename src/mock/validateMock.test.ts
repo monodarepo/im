@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import tailwindConfig from '../../tailwind.config'
 import { combine, isStale, type Attestation } from '../domain/attestation'
 import {
@@ -62,6 +62,22 @@ import {
   UF_OPPORTUNITY,
 } from './opportunities'
 import { SELLOUT_PREVIOUS_TOTAL_BRL, SELLOUT_SERIES } from './sellout'
+import {
+  findSku,
+  formatMetric,
+  PRODUCT_DIMENSION_COUNT,
+  type ProductMetric,
+} from './products'
+import {
+  buildWaterfallSteps,
+  FORWARD_TARGETS,
+  HAS_DECOMPOSITION,
+  ROOT_CAUSE_CASE,
+  ROOT_CAUSE_FACTORS,
+} from './rootCause'
+import { DATA_EXCEPTIONS, DEGRADED_ATTESTATIONS, RELIABILITY_SERIES, SOURCE_HEALTH } from './dataQuality'
+import { useDecisions } from '../state/decisionsStore'
+import { useExceptions } from '../state/exceptionsStore'
 import { createRandom, MOCK_SEED } from './random'
 import { findForbiddenTerms, findNonDeterministicCode, type SourceFile } from './validateMock'
 
@@ -631,6 +647,227 @@ describe('mapa do Brasil', () => {
     expect(opportunityLevel(1_900_000)).toBe(3)
     expect(opportunityLevel(1_600_000)).toBe(2)
     expect(opportunityLevel(undefined)).toBe(1)
+  })
+})
+
+describe('Produto 360°', () => {
+  const losartana = findSku('losartana-50-30')
+
+  it('agrupa as dimensões do módulo 1.3 em quatro painéis', () => {
+    expect(losartana?.panels.map((panel) => panel.title)).toEqual([
+      'Comercial',
+      'Disponibilidade',
+      'Demanda',
+      'Ação',
+    ])
+    expect(PRODUCT_DIMENSION_COUNT).toBe(14)
+  })
+
+  it('dá a cada painel um atestado próprio — é o contraste que a tela argumenta', () => {
+    const panels = losartana?.panels ?? []
+    const fingerprints = panels.map((panel) =>
+      [...panel.attestation.source].join('+') +
+      `|${panel.attestation.asOf}|${panel.attestation.confidence}|${panel.attestation.method}`,
+    )
+    expect(new Set(fingerprints).size).toBe(panels.length)
+  })
+
+  it('combina pelo elo mais fraco dentro de cada painel', () => {
+    const demanda = losartana?.panels.find((panel) => panel.id === 'demanda')
+    expect(demanda?.attestation.source).toEqual(['crm_sfa', 'iqvia'])
+    expect(demanda?.attestation.method).toBe('estimated')
+
+    const acao = losartana?.panels.find((panel) => panel.id === 'acao')
+    expect(acao?.attestation.confidence).toBe('medium')
+    expect(acao?.attestation.quality).toBe('partial')
+  })
+
+  it('traz o canônico de Losartana no painel de Ação', () => {
+    const acao = losartana?.panels.find((panel) => panel.id === 'acao')
+    const metrics = acao?.metrics ?? []
+    expect(metrics.find((m) => m.id === 'open-recommendations')?.value).toBe(1)
+    expect(metrics.find((m) => m.id === 'potential-impact')?.value).toBe(4_800_000)
+    expect(formatMetric(metrics[1] as ProductMetric)).toBe('R$ 4,8M')
+  })
+
+  it('mostra travessão onde o valor ainda não veio do ESCOPO', () => {
+    const comercial = losartana?.panels.find((panel) => panel.id === 'comercial')
+    const sellIn = comercial?.metrics.find((m) => m.id === 'sell-in')
+    expect(sellIn?.value).toBeNull()
+    expect(formatMetric(sellIn as ProductMetric)).toBe('—')
+  })
+})
+
+describe('causa-raiz', () => {
+  it('decompõe em sete fatores', () => {
+    expect(ROOT_CAUSE_FACTORS.map((factor) => factor.label)).toEqual([
+      'Preço',
+      'Ruptura',
+      'Distribuição',
+      'Prescrição',
+      'Execução',
+      'Mix',
+      'Movimento do concorrente',
+    ])
+  })
+
+  it('fixa o caso canônico da queda de 12%', () => {
+    expect(ROOT_CAUSE_CASE.totalPp).toBe(-12)
+    expect(formatPointsDelta(ROOT_CAUSE_CASE.totalPp)).toBe(`${MINUS}12,0 pp`)
+    expect(ROOT_CAUSE_CASE.decisionId).toBe('D-2026-0001')
+    expect(ROOT_CAUSE_CASE.opportunityBrl).toBe(4_800_000)
+  })
+
+  it('cobre com os três encaminhamentos todo fator que tem dono', () => {
+    const owners = new Set(
+      ROOT_CAUSE_FACTORS.map((factor) => factor.owner).filter((owner) => owner !== null),
+    )
+    const targets = new Set(FORWARD_TARGETS.map((target) => target.product))
+    expect(targets).toEqual(owners)
+    expect(targets.size).toBe(3)
+  })
+
+  it('marca o movimento do concorrente como externo, sem dono interno', () => {
+    expect(ROOT_CAUSE_FACTORS.find((f) => f.id === 'competitor')?.owner).toBeNull()
+  })
+
+  it('acumula o waterfall e fecha a barra de total a partir do zero', () => {
+    const steps = buildWaterfallSteps(
+      [
+        { label: 'Preço', value: -5 },
+        { label: 'Ruptura', value: -4 },
+        { label: 'Mix', value: -3 },
+      ],
+      'Total',
+    )
+
+    expect(steps.map((step) => [step.start, step.end])).toEqual([
+      [0, -5],
+      [-5, -9],
+      [-9, -12],
+      [0, -12],
+    ])
+    expect(steps.at(-1)?.isTotal).toBe(true)
+    expect(steps.at(-1)?.value).toBe(-12)
+  })
+
+  it('não plota decomposição enquanto as contribuições não vierem', () => {
+    expect(HAS_DECOMPOSITION).toBe(false)
+  })
+})
+
+describe('encaminhamento grava na Decisão', () => {
+  beforeEach(() => useDecisions.setState({ links: [] }))
+
+  it('cria um vínculo por área na decisão de origem', () => {
+    const { forward } = useDecisions.getState()
+    for (const target of FORWARD_TARGETS) {
+      forward(ROOT_CAUSE_CASE.decisionId, target.product, target.reason)
+    }
+
+    const links = useDecisions.getState().linksOf(ROOT_CAUSE_CASE.decisionId)
+    expect(links).toHaveLength(3)
+    expect(links.map((link) => link.target)).toEqual(['rgm', 'gtm', 'ag'])
+    expect(links.map((link) => link.reason)).toEqual([
+      'Preço',
+      'Execução e distribuição',
+      'Prescrição',
+    ])
+    expect(links.every((link) => link.createdOn === HOJE)).toBe(true)
+  })
+
+  it('não duplica ao encaminhar duas vezes para a mesma área', () => {
+    const { forward } = useDecisions.getState()
+    forward('D-2026-0001', 'rgm', 'Preço')
+    forward('D-2026-0001', 'rgm', 'Preço')
+    expect(useDecisions.getState().links).toHaveLength(1)
+    expect(useDecisions.getState().isForwarded('D-2026-0001', 'rgm')).toBe(true)
+    expect(useDecisions.getState().isForwarded('D-2026-0001', 'gtm')).toBe(false)
+  })
+
+  it('mantém os vínculos separados por decisão', () => {
+    const { forward } = useDecisions.getState()
+    forward('D-2026-0001', 'rgm', 'Preço')
+    forward('D-2026-0002', 'gtm', 'Execução e distribuição')
+    expect(useDecisions.getState().linksOf('D-2026-0001')).toHaveLength(1)
+    expect(useDecisions.getState().linksOf('D-2026-0002')).toHaveLength(1)
+  })
+})
+
+describe('qualidade dos dados', () => {
+  beforeEach(() => useExceptions.setState({ accepted: [] }))
+
+  it('deixa a Scanntech com layout alterado', () => {
+    const scanntech = SOURCE_HEALTH.find((health) => health.source === 'scanntech')
+    expect(scanntech?.status).toBe('layout_changed')
+    expect(isStale(scanntech?.attestation as Attestation)).toBe(true)
+  })
+
+  it('cobre as sete fontes válidas, sem origem fora da lista', () => {
+    expect(SOURCE_HEALTH).toHaveLength(7)
+    expect(new Set(SOURCE_HEALTH.map((health) => health.source)).size).toBe(7)
+  })
+
+  it('faz cada linha atestar a própria fonte, sem acusar terceiros', () => {
+    for (const health of SOURCE_HEALTH) {
+      expect(health.attestation.source).toEqual([health.source])
+    }
+  })
+
+  it('nomeia no banner só as fontes que a tabela mostra fora de OK', () => {
+    const degraded = new Set(
+      SOURCE_HEALTH.filter((health) => health.status !== 'ok').map((health) => health.source),
+    )
+    const named = new Set(DEGRADED_ATTESTATIONS.flatMap((attestation) => attestation.source))
+    expect(named).toEqual(degraded)
+  })
+
+  it('alimenta o banner degradado só com o que não está OK', () => {
+    expect(DEGRADED_ATTESTATIONS.length).toBe(
+      SOURCE_HEALTH.filter((health) => health.status !== 'ok').length,
+    )
+    expect(DEGRADED_ATTESTATIONS.length).toBeGreaterThan(0)
+  })
+
+  it('lista três exceções, todas da fonte que mudou de layout', () => {
+    expect(DATA_EXCEPTIONS).toHaveLength(3)
+    for (const exception of DATA_EXCEPTIONS) {
+      expect(exception.source).toBe('scanntech')
+      expect(exception.probableCause.length).toBeGreaterThan(0)
+      expect(exception.proposedFix.length).toBeGreaterThan(0)
+      expect(exception.rule.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('aceitar a correção resolve a exceção e cria a regra', () => {
+    const [first] = DATA_EXCEPTIONS
+    const { accept } = useExceptions.getState()
+
+    expect(useExceptions.getState().isResolved(first!.id)).toBe(false)
+    accept(first!.id, first!.rule)
+
+    expect(useExceptions.getState().isResolved(first!.id)).toBe(true)
+    expect(useExceptions.getState().ruleOf(first!.id)?.rule).toBe(first!.rule)
+    expect(useExceptions.getState().ruleOf(first!.id)?.createdOn).toBe(HOJE)
+  })
+
+  it('não cria a mesma regra duas vezes', () => {
+    const [first] = DATA_EXCEPTIONS
+    const { accept } = useExceptions.getState()
+    accept(first!.id, first!.rule)
+    accept(first!.id, first!.rule)
+    expect(useExceptions.getState().accepted).toHaveLength(1)
+  })
+
+  it('mede confiabilidade em 30 dias e derruba a Scanntech na virada de layout', () => {
+    expect(RELIABILITY_SERIES).toHaveLength(30)
+    expect(RELIABILITY_SERIES.at(-1)?.date).toBe(HOJE)
+
+    const first = RELIABILITY_SERIES[0]
+    const last = RELIABILITY_SERIES.at(-1)
+    expect(first!.scanntech).toBeGreaterThan(90)
+    expect(last!.scanntech).toBeLessThan(75)
+    expect(last!.neogrid).toBeGreaterThan(90)
   })
 })
 

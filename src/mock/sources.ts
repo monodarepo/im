@@ -36,6 +36,37 @@ export const NEOGRID_DISTRIBUIDORES: Attestation = {
   method: 'estimated',
 }
 
+export const SAP: Attestation = {
+  source: ['sap'],
+  asOf: daysAgo(1),
+  lagDays: 2,
+  confidence: 'high',
+  quality: 'complete',
+  method: 'observed',
+}
+
+export const CRM_SFA: Attestation = {
+  source: ['crm_sfa'],
+  asOf: daysAgo(1),
+  lagDays: 2,
+  confidence: 'high',
+  quality: 'complete',
+  method: 'observed',
+}
+
+/**
+ * Recorte da Scanntech afetado pela mudança de layout: mesma fonte, captura
+ * parada há mais tempo e confiança rebaixada até a regra de correção entrar.
+ */
+export const SCANNTECH_AFFECTED: Attestation = {
+  source: ['scanntech'],
+  asOf: daysAgo(9),
+  lagDays: 3,
+  confidence: 'low',
+  quality: 'degraded',
+  method: 'reprocessed',
+}
+
 export const IQVIA: Attestation = {
   source: ['iqvia'],
   asOf: daysAgo(30),
