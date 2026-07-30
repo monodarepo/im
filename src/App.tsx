@@ -3,9 +3,17 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { ROUTES } from './routes/registry'
 import { DecisionCentral } from './screens/DecisionCentral'
 import { DecisionDetail } from './screens/DecisionDetail'
+import { Assortment } from './screens/gtm/Assortment'
+import { CoverageSimulator } from './screens/gtm/CoverageSimulator'
+import { FieldExecution } from './screens/gtm/FieldExecution'
 import { GtmOverview } from './screens/gtm/GtmOverview'
+import { GtmPlanning } from './screens/gtm/GtmPlanning'
+import { GtmReports } from './screens/gtm/GtmReports'
 import { NextBestAction } from './screens/gtm/NextBestAction'
+import { QuotasAndTargets } from './screens/gtm/QuotasAndTargets'
+import { Segmentation } from './screens/gtm/Segmentation'
 import { SmartRouting } from './screens/gtm/SmartRouting'
+import { TerritoryCoverage } from './screens/gtm/TerritoryCoverage'
 import { CompetitivenessIndex } from './screens/rgm/CompetitivenessIndex'
 import { ElasticitySimulator } from './screens/rgm/ElasticitySimulator'
 import { GenericsWarRoom } from './screens/rgm/GenericsWarRoom'
@@ -46,8 +54,16 @@ const SCREENS: Record<string, ReactElement> = {
   '/rgm/war-room': <GenericsWarRoom />,
   '/rgm/relatorios': <Reports />,
   '/gtm': <GtmOverview />,
+  '/gtm/planejamento': <GtmPlanning />,
+  '/gtm/segmentacao': <Segmentation />,
+  '/gtm/territorios': <TerritoryCoverage />,
   '/gtm/nba': <NextBestAction />,
   '/gtm/roteirizacao': <SmartRouting />,
+  '/gtm/sortimento': <Assortment />,
+  '/gtm/execucao': <FieldExecution />,
+  '/gtm/metas': <QuotasAndTargets />,
+  '/gtm/simulador-cobertura': <CoverageSimulator />,
+  '/gtm/relatorios': <GtmReports />,
   '/hub': <MarketOverview />,
   '/hub/pulse': <MarketPulse />,
   '/hub/produto/:skuId': <Product360 />,

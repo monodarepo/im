@@ -186,6 +186,35 @@ import {
   TEAM_PERFORMANCE,
 } from './nba'
 import { BASE_ROUTE, REPLANNED_ROUTE, ROUTE_FACTORS, TRAVEL_SAVED_MINUTES } from './routing'
+import {
+  LAUNCH_STAGES,
+  MIX_COMBINATION_COUNT,
+  MIX_ENTRY_THRESHOLD_UNITS,
+  MIX_IN_COUNT,
+  MIX_OUT_COUNT,
+  NATIONAL_STOCKOUT_PERCENT as ASSORTMENT_STOCKOUT_PERCENT,
+  NUMERIC_DISTRIBUTION_PERCENT,
+  OBSERVED_STORES,
+  OUTLET_PROFILES,
+  STOCKOUT_ROWS,
+  UNIVERSE_STORES,
+} from './assortment'
+import { FIELD_FORCE, TEAM_EXECUTION } from './fieldExecution'
+import { POTENTIAL_THRESHOLD, SEGMENTATIONS } from './segmentation'
+import { BELOW_TARGET_COUNT, FIELD_TERRITORIES } from './gtmTerritories'
+import {
+  BOTTOM_UP_TARGET_BRL,
+  GAP_CAUSES as QUOTA_GAP_CAUSES,
+  ROLLUP_GAP_BRL,
+  TEAM_QUOTAS,
+  TOP_DOWN_TARGET_BRL,
+} from './quotas'
+import {
+  COVERAGE_SCENARIOS,
+  COVERAGE_SIMULATION_ATTESTATION,
+  resolveCoverageScenario,
+} from './coverageScenarios'
+import { AGENDA_EVIDENCE_COUNT, AGENDA_TOPICS, REP_ABOVE_COUNT, REP_BELOW_COUNT, REP_METRICS } from './gtmReports'
 import { createRandom, MOCK_SEED } from './random'
 import { findForbiddenTerms, findNonDeterministicCode, type SourceFile } from './validateMock'
 
@@ -1629,6 +1658,114 @@ describe('P7 — GTM Next Best Action e roteirização', () => {
   it('pesa os quatro fatores de roteirização em 100%', () => {
     expect(ROUTE_FACTORS.map((f) => f.id)).toEqual(['potential', 'distance', 'traffic', 'window'])
     expect(ROUTE_FACTORS.reduce((sum, f) => sum + f.weightPercent, 0)).toBe(100)
+  })
+})
+
+describe('P8 — telas restantes do GTM', () => {
+  it('decide o mix por giro contra limiar, e recomenda saídas', () => {
+    expect(MIX_IN_COUNT + MIX_OUT_COUNT).toBe(MIX_COMBINATION_COUNT)
+    expect(MIX_OUT_COUNT).toBeGreaterThan(0)
+    expect(MIX_ENTRY_THRESHOLD_UNITS).toBeGreaterThan(0)
+  })
+
+  it('projeta a base de lojas observadas sobre o universo declarado', () => {
+    const lojas = OUTLET_PROFILES.reduce((sum, profile) => sum + profile.observedStores, 0)
+    expect(lojas).toBe(OBSERVED_STORES)
+    expect(OBSERVED_STORES).toBe(15_000)
+    expect(UNIVERSE_STORES).toBe(70_000)
+  })
+
+  it('ancora a tela de sortimento nos canônicos de ruptura e distribuição', () => {
+    expect(ASSORTMENT_STOCKOUT_PERCENT).toBe(7.3)
+    expect(NUMERIC_DISTRIBUTION_PERCENT).toBe(76.2)
+  })
+
+  it('ordena a fila de ruptura por impacto, não por tempo', () => {
+    const perdas = STOCKOUT_ROWS.map((row) => row.lostSalesBrl)
+    expect([...perdas].sort((a, b) => b - a)).toEqual(perdas)
+
+    const porTempo = [...STOCKOUT_ROWS].sort((a, b) => b.daysOut - a.daysOut)
+    expect(porTempo.map((row) => row.id)).not.toEqual(STOCKOUT_ROWS.map((row) => row.id))
+  })
+
+  it('afunila o lançamento de listagem a recompra sem crescer', () => {
+    expect(LAUNCH_STAGES).toHaveLength(3)
+    const clientes = LAUNCH_STAGES.map((stage) => stage.customers)
+    expect([...clientes].sort((a, b) => b - a)).toEqual(clientes)
+  })
+
+  it('separa visita comprovada de visita só declarada', () => {
+    expect(TEAM_EXECUTION.evidenceVisits + TEAM_EXECUTION.declaredOnlyVisits).toBe(
+      TEAM_EXECUTION.completedVisits,
+    )
+    expect(TEAM_EXECUTION.declaredOnlyVisits).toBeGreaterThan(0)
+    expect(FIELD_FORCE.peopleInField).toBe(5_000)
+  })
+
+  it('mantém o frame mobile sem controle clicável', () => {
+    const tela = readFileSync(join(SRC, 'screens/gtm/FieldExecution.tsx'), 'utf8')
+    expect(tela).toContain('pointer-events-none')
+  })
+
+  it('põe alto potencial acima do corte da matriz e baixo abaixo', () => {
+    for (const point of SEGMENTATIONS) {
+      if (point.doctor.potentialTier === 'high') {
+        expect(point.potentialScore).toBeGreaterThan(POTENTIAL_THRESHOLD)
+      }
+      if (point.doctor.potentialTier === 'low') {
+        expect(point.potentialScore).toBeLessThan(POTENTIAL_THRESHOLD)
+      }
+    }
+    expect(SEGMENTATIONS).toHaveLength(DOCTORS.length)
+  })
+
+  it('fecha a cobertura média dos territórios no canônico de 82%', () => {
+    const alvo = FIELD_TERRITORIES.reduce((sum, t) => sum + t.targetDoctors, 0)
+    const cobertos = FIELD_TERRITORIES.reduce((sum, t) => sum + t.coveredDoctors, 0)
+    expect(Number(((cobertos / alvo) * 100).toFixed(1))).toBe(82.0)
+    expect(BELOW_TARGET_COUNT).toBeGreaterThan(0)
+  })
+
+  it('fecha o desdobramento bottom-up no sell-out incremental canônico', () => {
+    expect(BOTTOM_UP_TARGET_BRL).toBe(1_200_000)
+    expect(TEAM_QUOTAS.reduce((sum, team) => sum + team.quotaBrl, 0)).toBe(BOTTOM_UP_TARGET_BRL)
+    expect(TOP_DOWN_TARGET_BRL - BOTTOM_UP_TARGET_BRL).toBe(ROLLUP_GAP_BRL)
+    expect(TEAM_QUOTAS.reduce((sum, team) => sum + team.rollupGapBrl, 0)).toBe(ROLLUP_GAP_BRL)
+  })
+
+  it('dá nome a cada parcela do gap de desdobramento', () => {
+    expect(QUOTA_GAP_CAUSES.length).toBeGreaterThan(0)
+    for (const cause of QUOTA_GAP_CAUSES) {
+      expect(cause.label.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('reproduz os canônicos no cenário atual de cobertura', () => {
+    const atual = COVERAGE_SCENARIOS[0]?.canonical
+    expect(atual?.coveragePercent).toBe(82)
+    expect(atual?.productiveVisitPercent).toBe(68)
+    expect(atual?.conversionPercent).toBe(23)
+    expect(atual?.incrementalSellOutBrl).toBe(1_200_000)
+  })
+
+  it('devolve o cenário fixado quando os parâmetros são os de origem', () => {
+    for (const scenario of COVERAGE_SCENARIOS) {
+      expect(resolveCoverageScenario(scenario, scenario.inputs)).toBe(scenario.canonical)
+    }
+  })
+
+  it('rebaixa o atestado da projeção de cobertura', () => {
+    expect(COVERAGE_SIMULATION_ATTESTATION.method).toBe('extrapolated')
+    expect(COVERAGE_SIMULATION_ATTESTATION.confidence).not.toBe('high')
+  })
+
+  it('monta a pauta citando a evidência que colocou cada item nela', () => {
+    expect(AGENDA_TOPICS.length).toBeGreaterThan(0)
+    for (const topic of AGENDA_TOPICS) {
+      expect(topic.evidence.length).toBeGreaterThan(0)
+    }
+    expect(AGENDA_EVIDENCE_COUNT).toBeGreaterThan(0)
+    expect(REP_ABOVE_COUNT + REP_BELOW_COUNT).toBeLessThanOrEqual(REP_METRICS.length)
   })
 })
 
