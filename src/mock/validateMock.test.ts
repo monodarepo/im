@@ -1905,10 +1905,27 @@ describe('P9 — AG Otimizador de Alocação (10.5)', () => {
     expect(ROUTES.some((route) => route.path === SAMPLE_ALLOCATION_ROUTE)).toBe(true)
   })
 
-  it('mapeia as três rotas do AG com os módulos da seção 7', () => {
+  it('mapeia os dez módulos do AG, numerados de 4.1 a 4.10', () => {
     const ag = ROUTES.filter((route) => route.product === 'ag')
-    expect(ag.map((route) => route.badge)).toEqual(['AG 4.1', 'AG 4.4', 'AG 4.7'])
-    for (const route of ag) expect(resolveTheme(route.path)).toBe('ag')
+    expect(ag).toHaveLength(10)
+
+    expect(ag.map((route) => route.badge)).toEqual([
+      'AG 4.1',
+      'AG 4.2',
+      'AG 4.3',
+      'AG 4.4',
+      'AG 4.5',
+      'AG 4.6',
+      'AG 4.7',
+      'AG 4.8',
+      'AG 4.9',
+      'AG 4.10',
+    ])
+
+    for (const route of ag) {
+      expect(route.path.startsWith('/ag')).toBe(true)
+      expect(resolveTheme(route.navPath ?? route.path)).toBe('ag')
+    }
   })
 })
 
