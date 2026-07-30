@@ -401,6 +401,38 @@ describe('roteamento e identidade de cor', () => {
     }
   })
 
+  it('mapeia os dez módulos do HUB, numerados de 1.1 a 1.10', () => {
+    const hub = ROUTES.filter((route) => route.product === 'hub')
+    expect(hub).toHaveLength(10)
+
+    expect(hub.map((route) => route.badge)).toEqual([
+      'HUB 1.1',
+      'HUB 1.2',
+      'HUB 1.3',
+      'HUB 1.4',
+      'HUB 1.5',
+      'HUB 1.6',
+      'HUB 1.7',
+      'HUB 1.8',
+      'HUB 1.9',
+      'HUB 1.10',
+    ])
+
+    for (const route of hub) {
+      expect(route.path.startsWith('/hub')).toBe(true)
+      expect(resolveTheme(route.navPath ?? route.path)).toBe('hub')
+    }
+  })
+
+  it('dá a toda rota com parâmetro um destino navegável', () => {
+    for (const route of ROUTES) {
+      if (route.path.includes(':')) {
+        expect(route.navPath).toBeDefined()
+        expect(route.navPath?.includes(':')).toBe(false)
+      }
+    }
+  })
+
   it('conta o que falta da seção 12.3', () => {
     const coverage = routeCoverage()
     expect(coverage.expected).toBe(45)

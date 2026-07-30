@@ -38,7 +38,7 @@ export function OpportunityMap() {
 
   const openTerritory = (uf: UfCode) => {
     setSelection('region', [uf])
-    navigate('/hub/territorio-360')
+    navigate('/hub/territorio')
   }
 
   const width = BRAZIL_VIEWBOX.width / zoom
