@@ -2,10 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: light;
-}
+@layer base {
+  :root {
+    color-scheme: light;
 
-body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+    --product-accent: #1e4fd8;
+
+    --surface-app: #f6f7fb;
+    --surface-card: #ffffff;
+    --surface-border: #e2e8f0;
+
+    --radius-card: 16px;
+    --radius-control: 12px;
+
+    --sidebar-width: 256px;
+  }
+
+  body {
+    background-color: var(--surface-app);
+    @apply text-slate-900 antialiased;
+    font-feature-settings: 'tnum' 1;
+  }
 }

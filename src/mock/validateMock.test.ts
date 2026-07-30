@@ -1,39 +1,62 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import tailwindConfig from '../../tailwind.config'
 import { combine, isStale, type Attestation } from '../domain/attestation'
-import { addDays, ageInDays, daysBetween, formatDate, formatMonth, HOJE } from '../domain/today'
-import { PRODUCTS, PRODUCT_ORDER, SEMANTIC, toneForDelta } from '../design/tokens'
+import {
+  addDays,
+  ageInDays,
+  daysAgo,
+  daysBetween,
+  daysFromNow,
+  formatDate,
+  formatMonth,
+  formatRelative,
+  HOJE,
+} from '../domain/today'
+import {
+  formatDecimal,
+  formatInteger,
+  formatMultiple,
+  formatPercent,
+  formatPercentDelta,
+  formatPointsDelta,
+  MINUS,
+} from '../domain/format'
+import { formatMoney, formatMoneyDelta, formatMoneyFull } from '../domain/money'
+import {
+  LAYOUT,
+  OPPORTUNITY_LEVELS,
+  OPPORTUNITY_SCALE,
+  PRODUCTS,
+  PRODUCT_ORDER,
+  productCssVariables,
+  RADIUS,
+  SEMANTIC,
+  SURFACE,
+  toneForDelta,
+  TYPOGRAPHY,
+} from '../design/tokens'
 import { createRandom, MOCK_SEED } from './random'
+import { findForbiddenTerms, findNonDeterministicCode, type SourceFile } from './validateMock'
 
 const SRC = fileURLToPath(new URL('..', import.meta.url))
-const SELF = 'mock/validateMock.test.ts'
 
-function sourceFiles(): string[] {
-  const found: string[] = []
+function loadSources(): SourceFile[] {
+  const files: string[] = []
   const walk = (dir: string): void => {
     for (const entry of readdirSync(dir)) {
       const full = join(dir, entry)
       if (statSync(full).isDirectory()) walk(full)
-      else if (/\.tsx?$/.test(entry)) found.push(full)
+      else if (/\.tsx?$/.test(entry)) files.push(full)
     }
   }
   walk(SRC)
-  return found.filter((file) => relative(SRC, file) !== SELF)
-}
-
-function readAllSources(): { file: string; text: string }[] {
-  return sourceFiles().map((file) => ({ file: relative(SRC, file), text: readFileSync(file, 'utf8') }))
-}
-
-/** Comentários citam regras; código as cumpre. As checagens de uso olham só o código. */
-function stripComments(text: string): string {
-  return text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
-}
-
-function readAllCode(): { file: string; text: string }[] {
-  return readAllSources().map(({ file, text }) => ({ file, text: stripComments(text) }))
+  return files.map((file) => ({
+    path: relative(SRC, file).split(sep).join('/'),
+    text: readFileSync(file, 'utf8'),
+  }))
 }
 
 const attestation = (over: Partial<Attestation> = {}): Attestation => ({
@@ -42,56 +65,36 @@ const attestation = (over: Partial<Attestation> = {}): Attestation => ({
   lagDays: 15,
   confidence: 'high',
   quality: 'complete',
-  method: 'measured',
+  method: 'observed',
   ...over,
 })
 
 describe('proibições invioláveis', () => {
-  const FORBIDDEN_TECH = [
-    'BigQuery',
-    'Vertex',
-    'Gemini',
-    'Looker',
-    'Dataflow',
-    'Dataplex',
-    'Pub/Sub',
-    'Apigee',
-    'AppSheet',
-    'Maps Platform',
-  ]
-
-  it.each(FORBIDDEN_TECH)('não menciona o produto técnico "%s"', (term) => {
-    const offenders = readAllSources()
-      .filter(({ text }) => text.toLowerCase().includes(term.toLowerCase()))
-      .map(({ file }) => file)
-    expect(offenders).toEqual([])
+  it('não deixa termo proibido entrar no mock nem na camada visual', () => {
+    expect(findForbiddenTerms(loadSources())).toEqual([])
   })
 
-  it('não cita Close-Up como fonte', () => {
-    const offenders = readAllSources()
-      .filter(({ text }) => /close[\s-]?up/i.test(text))
-      .map(({ file }) => file)
-    expect(offenders).toEqual([])
+  it('não lê relógio, armazenamento de navegador nem aleatoriedade não semeada', () => {
+    expect(findNonDeterministicCode(loadSources())).toEqual([])
   })
 
-  it('não usa armazenamento de navegador nem relógio do sistema no domínio ou no mock', () => {
-    const offenders = readAllCode()
-      .filter(({ file }) => file.startsWith('domain/') || file.startsWith('mock/'))
-      .filter(({ text }) => /localStorage|sessionStorage|Date\.now\(\)|new Date\(/.test(text))
-      .map(({ file }) => file)
-    expect(offenders).toEqual([])
-  })
-
-  it('não usa Math.random() em lugar nenhum', () => {
-    const offenders = readAllCode()
-      .filter(({ text }) => text.includes('Math.random('))
-      .map(({ file }) => file)
-    expect(offenders).toEqual([])
+  it('só admite fonte da lista válida — Close-Up é inexprimível no tipo', () => {
+    const sources = readFileSync(join(SRC, 'domain/attestation.ts'), 'utf8')
+    const union = /export type Source =\n((?:\s+\| '\w+'\n)+)/.exec(sources)?.[1] ?? ''
+    expect(union.match(/'(\w+)'/g)).toEqual([
+      "'scanntech'",
+      "'iqvia'",
+      "'neogrid'",
+      "'sap'",
+      "'crm_sfa'",
+      "'distribuidores'",
+      "'grandes_redes'",
+    ])
   })
 })
 
 describe('âncora temporal', () => {
-  it('HOJE é a única data literal do domínio', () => {
+  it('fixa HOJE em 2026-07-30', () => {
     expect(HOJE).toBe('2026-07-30')
   })
 
@@ -107,12 +110,21 @@ describe('âncora temporal', () => {
     expect(addDays('2027-02-28', 1)).toBe('2027-03-01')
   })
 
-  it('mede idade da informação a partir de HOJE', () => {
-    expect(ageInDays('2026-07-20')).toBe(10)
-    expect(ageInDays(HOJE)).toBe(0)
+  it('deriva datas relativas de HOJE', () => {
+    expect(daysAgo(30)).toBe('2026-06-30')
+    expect(daysFromNow(30)).toBe('2026-08-29')
+    expect(ageInDays(daysAgo(10))).toBe(10)
   })
 
-  it('formata em pt-BR', () => {
+  it('descreve a distância até HOJE em pt-BR', () => {
+    expect(formatRelative(HOJE)).toBe('hoje')
+    expect(formatRelative(daysAgo(1))).toBe('ontem')
+    expect(formatRelative(daysFromNow(1))).toBe('amanhã')
+    expect(formatRelative(daysAgo(3))).toBe('há 3 dias')
+    expect(formatRelative(daysFromNow(5))).toBe('em 5 dias')
+  })
+
+  it('formata data e mês em pt-BR', () => {
     expect(formatDate(HOJE)).toBe('30/07/2026')
     expect(formatMonth(HOJE)).toBe('jul/26')
   })
@@ -137,21 +149,37 @@ describe('atestado', () => {
         lagDays: 45,
         confidence: 'low',
         quality: 'partial',
-        method: 'modeled',
+        method: 'extrapolated',
       }),
     ])
 
+    expect(combined.lagDays).toBe(45)
     expect(combined.confidence).toBe('low')
     expect(combined.quality).toBe('partial')
-    expect(combined.method).toBe('modeled')
-    expect(combined.lagDays).toBe(45)
+    expect(combined.method).toBe('extrapolated')
     expect(combined.asOf).toBe('2026-06-30')
     expect(combined.source).toEqual(['iqvia', 'scanntech'])
   })
 
+  it('ordena o método de observado a reprocessado', () => {
+    const worst = combine([
+      attestation({ method: 'observed' }),
+      attestation({ method: 'estimated' }),
+      attestation({ method: 'reprocessed' }),
+      attestation({ method: 'extrapolated' }),
+    ])
+    expect(worst.method).toBe('reprocessed')
+
+    expect(combine([attestation({ method: 'observed' }), attestation({ method: 'estimated' })]).method).toBe(
+      'estimated',
+    )
+    expect(
+      combine([attestation({ method: 'estimated' }), attestation({ method: 'extrapolated' })]).method,
+    ).toBe('extrapolated')
+  })
+
   it('não repete fontes ao combinar', () => {
-    const combined = combine([attestation(), attestation({ asOf: '2026-07-01' })])
-    expect(combined.source).toEqual(['scanntech'])
+    expect(combine([attestation(), attestation({ asOf: '2026-07-01' })]).source).toEqual(['scanntech'])
   })
 
   it('exige ao menos um atestado', () => {
@@ -159,13 +187,66 @@ describe('atestado', () => {
   })
 
   it('marca atraso quando a idade ultrapassa o lag da fonte', () => {
-    expect(isStale(attestation({ asOf: '2026-07-20', lagDays: 15 }))).toBe(false)
-    expect(isStale(attestation({ asOf: '2026-06-01', lagDays: 15 }))).toBe(true)
+    expect(isStale(attestation({ asOf: daysAgo(10), lagDays: 15 }))).toBe(false)
+    expect(isStale(attestation({ asOf: daysAgo(60), lagDays: 15 }))).toBe(true)
   })
 })
 
-describe('design system', () => {
-  it('mantém a paleta semântica do ESCOPO', () => {
+describe('formatação pt-BR', () => {
+  it('agrupa milhar com ponto e decimal com vírgula', () => {
+    expect(formatInteger(1_610_000)).toBe('1.610.000')
+    expect(formatDecimal(256.4, 1)).toBe('256,4')
+    expect(formatInteger(999)).toBe('999')
+  })
+
+  it('assina delta percentual e pontos percentuais', () => {
+    expect(formatPercentDelta(8.6)).toBe('+8,6%')
+    expect(formatPercentDelta(-8.6)).toBe(`${MINUS}8,6%`)
+    expect(formatPointsDelta(-1.2)).toBe(`${MINUS}1,2 pp`)
+    expect(formatPointsDelta(1.2)).toBe('+1,2 pp')
+  })
+
+  it('usa o menos tipográfico, nunca hífen', () => {
+    expect(MINUS).toBe('−')
+    for (const rendered of [
+      formatDecimal(-1.2),
+      formatPercent(-1.2),
+      formatPercentDelta(-1.2),
+      formatPointsDelta(-1.2),
+      formatMoney(-4_800_000),
+      formatMoneyFull(-1_610_000),
+    ]) {
+      expect(rendered).toContain(MINUS)
+      expect(rendered).not.toContain('-')
+    }
+  })
+
+  it('não exibe zero negativo', () => {
+    expect(formatDecimal(-0.04, 1)).toBe('0,0')
+    expect(formatPercentDelta(-0.04)).toBe('+0,0%')
+  })
+
+  it('abrevia moeda por magnitude', () => {
+    expect(formatMoney(256_400_000)).toBe('R$ 256,4M')
+    expect(formatMoney(4_800_000)).toBe('R$ 4,8M')
+    expect(formatMoney(1_200_000_000)).toBe('R$ 1,2bi')
+    expect(formatMoney(256_400)).toBe('R$ 256,4 mil')
+    expect(formatMoney(640)).toBe('R$ 640')
+  })
+
+  it('mantém o valor cheio quando a tabela pede precisão', () => {
+    expect(formatMoneyFull(1_610_000)).toBe('R$ 1.610.000')
+    expect(formatMoneyDelta(-4_800_000)).toBe(`R$ ${MINUS}4,8M`)
+    expect(formatMoneyDelta(4_800_000)).toBe('R$ +4,8M')
+  })
+
+  it('formata multiplicador', () => {
+    expect(formatMultiple(1.8)).toBe('1,8x')
+  })
+})
+
+describe('design tokens', () => {
+  it('mantém a paleta semântica de dado', () => {
     expect(SEMANTIC).toEqual({
       positive: '#16A34A',
       negative: '#DC2626',
@@ -175,6 +256,7 @@ describe('design system', () => {
   })
 
   it('mantém a cor de identidade de cada produto', () => {
+    expect(PRODUCT_ORDER).toEqual(['hub', 'gtm', 'rgm', 'ag'])
     expect(PRODUCT_ORDER.map((id) => PRODUCTS[id].accent)).toEqual([
       '#1E4FD8',
       '#0F766E',
@@ -183,12 +265,65 @@ describe('design system', () => {
     ])
   })
 
+  it('publica a identidade como custom property trocável', () => {
+    expect(productCssVariables('gtm')).toEqual({ '--product-accent': '#0F766E' })
+    expect(productCssVariables('ag')).toEqual({ '--product-accent': '#EA7317' })
+  })
+
+  it('descreve a oportunidade do mapa em cinco níveis', () => {
+    expect(OPPORTUNITY_LEVELS).toEqual([1, 2, 3, 4, 5])
+    expect(Object.keys(OPPORTUNITY_SCALE)).toHaveLength(5)
+    expect(new Set(OPPORTUNITY_LEVELS.map((level) => OPPORTUNITY_SCALE[level].color)).size).toBe(5)
+  })
+
+  it('fixa superfície, raio, sidebar e tipografia dentro das faixas do ESCOPO', () => {
+    expect(SURFACE.app).toBe('#F6F7FB')
+
+    const px = (value: string) => Number(value.replace('px', ''))
+    expect(px(RADIUS.control)).toBeGreaterThanOrEqual(12)
+    expect(px(RADIUS.card)).toBeLessThanOrEqual(16)
+    expect(px(LAYOUT.sidebarWidth)).toBeGreaterThanOrEqual(240)
+    expect(px(LAYOUT.sidebarWidth)).toBeLessThanOrEqual(260)
+    expect(px(TYPOGRAPHY.kpi)).toBeGreaterThanOrEqual(28)
+    expect(px(TYPOGRAPHY.kpiLarge)).toBeLessThanOrEqual(32)
+    expect(px(TYPOGRAPHY.delta)).toBeGreaterThanOrEqual(12)
+    expect(px(TYPOGRAPHY.deltaLarge)).toBeLessThanOrEqual(13)
+  })
+
   it('escolhe o tom pelo sinal, respeitando métricas invertidas', () => {
     expect(toneForDelta(3.2)).toBe('positive')
     expect(toneForDelta(-3.2)).toBe('negative')
     expect(toneForDelta(0)).toBe('neutral')
     expect(toneForDelta(-3.2, { inverted: true })).toBe('positive')
     expect(toneForDelta(3.2, { inverted: true })).toBe('negative')
+  })
+
+  it('expõe todo token ao Tailwind, incluindo a identidade como var', () => {
+    const { colors, borderRadius, spacing, fontSize } = tailwindConfig.theme.extend
+
+    expect(colors.product).toBe('var(--product-accent)')
+    expect(colors.positive).toBe(SEMANTIC.positive)
+    expect(colors.surface.app).toBe(SURFACE.app)
+
+    for (const id of PRODUCT_ORDER) {
+      expect(colors[id]).toBe(PRODUCTS[id].accent)
+    }
+    for (const level of OPPORTUNITY_LEVELS) {
+      expect(colors.opportunity[level]).toBe(OPPORTUNITY_SCALE[level].color)
+    }
+
+    expect(borderRadius.card).toBe(RADIUS.card)
+    expect(spacing.sidebar).toBe(LAYOUT.sidebarWidth)
+    expect(fontSize.kpi[0]).toBe(TYPOGRAPHY.kpi)
+    expect(fontSize.delta[0]).toBe(TYPOGRAPHY.delta)
+  })
+
+  it('mantém o CSS base alinhado aos tokens', () => {
+    const css = readFileSync(join(SRC, 'index.css'), 'utf8')
+    expect(css).toContain(`--surface-app: ${SURFACE.app.toLowerCase()}`)
+    expect(css).toContain(`--radius-card: ${RADIUS.card}`)
+    expect(css).toContain(`--sidebar-width: ${LAYOUT.sidebarWidth}`)
+    expect(css).toContain(`--product-accent: ${PRODUCTS.hub.accent.toLowerCase()}`)
   })
 })
 

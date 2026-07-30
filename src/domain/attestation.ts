@@ -29,8 +29,11 @@ export type Confidence = 'low' | 'medium' | 'high'
 /** Integridade do dado que sustenta o número. */
 export type Quality = 'degraded' | 'partial' | 'complete'
 
-/** Como o número foi obtido. */
-export type Method = 'measured' | 'derived' | 'modeled'
+/**
+ * Como o número foi obtido, da apuração mais direta à mais indireta:
+ * observado > estimado > extrapolado > reprocessado.
+ */
+export type Method = 'observed' | 'estimated' | 'extrapolated' | 'reprocessed'
 
 export const CONFIDENCE_LABEL: Record<Confidence, string> = {
   low: 'Confiança baixa',
@@ -45,14 +48,20 @@ export const QUALITY_LABEL: Record<Quality, string> = {
 }
 
 export const METHOD_LABEL: Record<Method, string> = {
-  measured: 'Medido',
-  derived: 'Derivado',
-  modeled: 'Modelado',
+  observed: 'Observado',
+  estimated: 'Estimado',
+  extrapolated: 'Extrapolado',
+  reprocessed: 'Reprocessado',
 }
 
 const CONFIDENCE_RANK: Record<Confidence, number> = { low: 0, medium: 1, high: 2 }
 const QUALITY_RANK: Record<Quality, number> = { degraded: 0, partial: 1, complete: 2 }
-const METHOD_RANK: Record<Method, number> = { modeled: 0, derived: 1, measured: 2 }
+const METHOD_RANK: Record<Method, number> = {
+  reprocessed: 0,
+  extrapolated: 1,
+  estimated: 2,
+  observed: 3,
+}
 
 /**
  * Procedência de um número exibido. Todo valor relevante na interface carrega

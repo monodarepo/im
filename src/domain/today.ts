@@ -66,6 +66,28 @@ export function ageInDays(asOf: IsoDate): number {
   return daysBetween(asOf, HOJE)
 }
 
+/** Data `days` dias antes de `HOJE`. */
+export function daysAgo(days: number): IsoDate {
+  return addDays(HOJE, -days)
+}
+
+/** Data `days` dias depois de `HOJE`. */
+export function daysFromNow(days: number): IsoDate {
+  return addDays(HOJE, days)
+}
+
+/**
+ * Distância até `HOJE` em linguagem natural: `hoje`, `ontem`, `há 3 dias`,
+ * `amanhã`, `em 5 dias`.
+ */
+export function formatRelative(date: IsoDate): string {
+  const delta = daysBetween(HOJE, date)
+  if (delta === 0) return 'hoje'
+  if (delta === -1) return 'ontem'
+  if (delta === 1) return 'amanhã'
+  return delta < 0 ? `há ${-delta} dias` : `em ${delta} dias`
+}
+
 const MONTHS_PT = [
   'jan',
   'fev',
