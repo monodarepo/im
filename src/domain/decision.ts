@@ -84,6 +84,21 @@ export const DECISION_TRANSITIONS: Record<DecisionState, readonly DecisionState[
   learned: [],
 }
 
+/**
+ * Rótulo de AÇÃO de cada transição, pelo estado de destino. O botão diz o que
+ * acontece (voz ativa); o chip de estado continua dizendo onde a decisão está.
+ */
+export const DECISION_ACTION_LABEL: Record<DecisionState, string> = {
+  draft: 'Rascunhar',
+  proposed: 'Devolver a proposta',
+  in_approval: 'Enviar para aprovação',
+  approved: 'Aprovar',
+  rejected: 'Rejeitar',
+  executing: 'Marcar como executada',
+  concluded: 'Concluir',
+  learned: 'Marcar como aprendida',
+}
+
 export function canTransition(from: DecisionState, to: DecisionState): boolean {
   return DECISION_TRANSITIONS[from].includes(to)
 }

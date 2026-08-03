@@ -178,7 +178,7 @@ function SaturationChart() {
               <Line
                 {...CHART_LINE}
                 key={series.key}
-                type="monotone"
+                type="linear"
                 dataKey={series.key}
                 name={series.label}
                 stroke={series.color}

@@ -150,7 +150,7 @@ function AlertCard({ alert }: { alert: Alert }) {
             Valor em risco
           </dt>
           <dd
-            className="mt-1 text-kpi tabular-nums"
+            className="mt-1 font-mono text-kpi tabular-nums"
             style={{ color: alert.valueAtRiskBrl > 0 ? SEMANTIC.negative : SEMANTIC.neutral }}
           >
             {alert.valueAtRiskBrl > 0 ? formatMoney(alert.valueAtRiskBrl) : 'Sem R$ direto'}

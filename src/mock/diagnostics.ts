@@ -25,7 +25,7 @@ export const DIAGNOSTICS: readonly Diagnostic[] = [
     id: 'ruptura-ne',
     finding: 'Ruptura acima de 10% em 3 estados do NE',
     readingLabel: 'Impacto estimado',
-    reading: 'R$ 2,1M',
+    reading: 'R$ 2,1M',
     attestation: NEOGRID_DISTRIBUIDORES,
   },
   {

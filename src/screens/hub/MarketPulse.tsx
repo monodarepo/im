@@ -302,7 +302,7 @@ function ForecastChart() {
 
             <Area
               {...CHART_AREA}
-              type="monotone"
+              type="linear"
               dataKey="faixa"
               name="Faixa de confiança"
               stroke="none"
@@ -313,7 +313,7 @@ function ForecastChart() {
             />
             <Line
               {...CHART_LINE}
-              type="monotone"
+              type="linear"
               dataKey="observado"
               name="Observado"
               stroke={OBSERVED_INK}
@@ -322,7 +322,7 @@ function ForecastChart() {
             />
             <Line
               {...CHART_LINE}
-              type="monotone"
+              type="linear"
               dataKey="projetado"
               name="Projeção (mediana)"
               stroke={BAND_INK}

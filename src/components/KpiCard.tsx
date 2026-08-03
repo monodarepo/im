@@ -3,6 +3,8 @@ import { DataBadge } from './DataBadge'
 import { PerimeterMark } from './PerimeterNote'
 import { SemanticDelta, type DeltaUnit } from './SemanticDelta'
 
+import type { ReactNode } from 'react'
+
 type KpiCardProps = {
   label: string
   /** Valor já formatado pelo domínio (`money.ts` / `format.ts`). */
@@ -15,6 +17,8 @@ type KpiCardProps = {
   size?: 'md' | 'lg'
   /** Marca o valor com o asterisco de perímetro em validação (RGM, seção 6). */
   perimeter?: boolean
+  /** Selo no canto do cabeçalho (ex.: badge de produto). Em flex, nunca sobreposto. */
+  corner?: ReactNode
 }
 
 /**
@@ -33,12 +37,21 @@ export function KpiCard({
   attestation,
   size = 'md',
   perimeter = false,
+  corner,
 }: KpiCardProps) {
   return (
     <article className="rounded-card border border-surface-border bg-surface-card p-4">
-      <h3 className="text-micro uppercase text-neutral" title={describeAttestation(attestation)}>
-        {label}
-      </h3>
+      {/* Zona do rótulo com altura de duas linhas: card não muda de altura
+          quando um rótulo longo quebra e o vizinho não. */}
+      <header className="flex min-h-[27px] items-start justify-between gap-2">
+        <h3
+          className="min-w-0 text-micro uppercase text-neutral"
+          title={describeAttestation(attestation)}
+        >
+          {label}
+        </h3>
+        {corner ? <span className="shrink-0">{corner}</span> : null}
+      </header>
 
       <p
         className={`mt-1.5 font-mono tabular-nums text-slate-900 ${
@@ -60,8 +73,8 @@ export function KpiCard({
         </p>
       ) : null}
 
-      <footer className="mt-3 border-t border-surface-border pt-2.5">
-        <DataBadge attestation={attestation} />
+      <footer className="mt-3 flex min-h-[34px] items-center border-t border-surface-border pt-2.5">
+        <DataBadge attestation={attestation} oneLine />
       </footer>
     </article>
   )

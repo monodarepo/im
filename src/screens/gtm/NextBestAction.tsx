@@ -334,7 +334,7 @@ export function NextBestAction() {
             Next best action
           </h1>
           <p className="mt-1 text-lg font-semibold tracking-tight text-slate-900">
-            Recomendações inteligentes para sua atuação
+            Próximas ações do dia
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

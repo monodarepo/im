@@ -1,4 +1,5 @@
 import { combine, type Attestation } from '../domain/attestation'
+import { formatMoney } from '../domain/money'
 import type { ProductId } from '../design/tokens'
 import { FEATURED_DECISION } from './decisionRecords'
 import { DOCTORS } from './doctors'
@@ -80,9 +81,9 @@ export const ANSWER_BLOCKS: readonly AnswerBlock[] = [
     headline:
       'Três territórios concentram 68% da perda de participação em São Paulo. Começar por eles é o que muda o número no ciclo.',
     rows: [
-      { label: 'SP Capital — Centro', value: 'R$ 1,8M', note: '−4,1 pp de participação' },
-      { label: 'SP Capital — Zona Leste', value: 'R$ 1,1M', note: '−3,4 pp de participação' },
-      { label: 'SP Interior — Campinas', value: 'R$ 0,9M', note: '−2,2 pp de participação' },
+      { label: 'SP Capital — Centro', value: 'R$ 1,8M', note: '−4,1 pp de participação' },
+      { label: 'SP Capital — Zona Leste', value: 'R$ 1,1M', note: '−3,4 pp de participação' },
+      { label: 'SP Interior — Campinas', value: 'R$ 0,9M', note: '−2,2 pp de participação' },
     ],
     product: 'gtm',
     route: '/gtm/territorios',
@@ -96,8 +97,8 @@ export const ANSWER_BLOCKS: readonly AnswerBlock[] = [
       'A perda está no canal independente, não nas grandes redes. São 148 pontos sem visita no ciclo.',
     rows: [
       { label: 'Farmácias independentes', value: '148 pontos', note: 'sem visita no ciclo' },
-      { label: 'Rede Aurora — Centro', value: 'R$ 0,6M', note: 'ruptura de 11,8%' },
-      { label: 'Distribuidor Paulista', value: 'R$ 0,4M', note: 'cobertura de estoque abaixo do piso' },
+      { label: 'Rede Aurora — Centro', value: 'R$ 0,6M', note: 'ruptura de 11,8%' },
+      { label: 'Distribuidor Paulista', value: 'R$ 0,4M', note: 'cobertura de estoque abaixo do piso' },
     ],
     product: 'hub',
     route: '/hub/cliente',
@@ -185,7 +186,7 @@ export const ANSWER_BLOCKS: readonly AnswerBlock[] = [
       'A soma das três frentes é a decomposição da decisão que já existe — não é um número novo.',
     rows: FEATURED_DECISION.parcels.map((parcel) => ({
       label: parcel.label,
-      value: `R$ ${(parcel.amountBrl / 1_000_000).toFixed(1).replace('.', ',')}M`,
+      value: formatMoney(parcel.amountBrl),
     })),
     product: 'hub',
     route: '/decisoes/D-2026-0001',

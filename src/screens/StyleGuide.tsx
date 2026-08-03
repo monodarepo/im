@@ -19,6 +19,7 @@ import { combine } from '../domain/attestation'
 import { formatMoney } from '../domain/money'
 import { formatInteger, formatPercent } from '../domain/format'
 import { MARKET_KPIS } from '../mock/kpis'
+import { ROUTES } from '../routes/registry'
 import { REGION_ALLOCATIONS, REGION_TOTAL } from '../mock/sampleAllocation'
 import { IQVIA, SCANNTECH } from '../mock/sources'
 
@@ -205,6 +206,21 @@ export function StyleGuide() {
             return formatPercent(REGION_TOTAL.coveragePercent, 0)
           }}
         />
+      </Panel>
+
+      <Panel
+        title="Módulos do ESCOPO"
+        description="Mapeamento módulo ↔ rota ↔ tela. Os códigos saíram da navegação (AUD-13) e moram aqui."
+      >
+        <div className="columns-2 gap-8 lg:columns-3">
+          {ROUTES.map((route) => (
+            <p key={route.path} className="flex items-baseline gap-2 py-0.5 text-label">
+              <span className="w-16 shrink-0 font-mono text-micro text-neutral">{route.badge}</span>
+              <span className="min-w-0 text-slate-800">{route.title}</span>
+              <span className="ml-auto font-mono text-micro text-slate-400">{route.path}</span>
+            </p>
+          ))}
+        </div>
       </Panel>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

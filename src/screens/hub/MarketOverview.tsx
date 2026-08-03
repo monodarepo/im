@@ -29,6 +29,10 @@ export function MarketOverview() {
         Visão geral do mercado
       </h1>
 
+      <section aria-label="Indicadores do mercado">
+        <p className="mb-2 text-micro uppercase text-neutral">
+          Indicadores do período · variação vs. 7 dias anteriores
+        </p>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {MARKET_KPIS.map((kpi) => (
           <KpiCard
@@ -38,11 +42,11 @@ export function MarketOverview() {
             delta={kpi.delta}
             deltaUnit={kpi.deltaUnit}
             deltaInverted={kpi.inverted}
-            comparison={kpi.comparison}
             attestation={kpi.attestation}
           />
         ))}
       </div>
+      </section>
 
       <div className="grid gap-5 lg:grid-cols-12">
         <div className="lg:col-span-7">

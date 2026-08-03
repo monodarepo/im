@@ -308,7 +308,7 @@ function BalanceChart() {
             <Bar {...CHART_BAR} dataKey="units" name="Saldo em estoque" fill={BALANCE_COLOR} />
             <Line
               {...CHART_LINE}
-              type="monotone"
+              type="linear"
               dataKey="unitsAtRisk"
               name="Unidades em risco"
               stroke={SEMANTIC.negative}

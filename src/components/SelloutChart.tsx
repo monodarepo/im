@@ -7,7 +7,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { CHART_AXIS, CHART_CURSOR, CHART_GRID, CHART_LINE } from '../design/chartTheme'
+import type { LineDot } from 'recharts/types/cartesian/Line'
+import { CHART_AXIS, CHART_CURSOR, CHART_GRID, CHART_LINE, endpointDot } from '../design/chartTheme'
 import { formatDecimal } from '../domain/format'
 import { formatMoney } from '../domain/money'
 import { SELLOUT_SERIES } from '../mock/sellout'
@@ -81,6 +82,13 @@ export function SelloutChart() {
     anterior: toMillions(point.previous),
   }))
 
+  /** Último ponto com valor: se ficar antes do fim do eixo, a série é parcial. */
+  const lastDefined = data.reduce(
+    (last, point, index) => (Number.isFinite(point.atual) ? index : last),
+    0,
+  )
+  const isPartial = lastDefined < data.length - 1
+
   // Base em zero — é dinheiro —, teto logo acima da série para não sobrar vão.
   const peak = Math.max(...data.map((point) => Math.max(point.atual, point.anterior)))
   const step = niceStep((peak * 1.15) / 5)
@@ -121,7 +129,7 @@ export function SelloutChart() {
             <Tooltip content={<SelloutTooltip />} cursor={CHART_CURSOR} />
             <Line
               {...CHART_LINE}
-              type="monotone"
+              type="linear"
               dataKey="anterior"
               name="7 dias anteriores"
               stroke={PREVIOUS_COLOR}
@@ -129,11 +137,12 @@ export function SelloutChart() {
             />
             <Line
               {...CHART_LINE}
-              type="monotone"
+              type="linear"
               dataKey="atual"
               name="Período atual"
               stroke={CURRENT_COLOR}
               strokeWidth={2.5}
+              dot={endpointDot(CURRENT_COLOR, lastDefined, { partial: isPartial }) as LineDot}
             />
           </LineChart>
         </ResponsiveContainer>

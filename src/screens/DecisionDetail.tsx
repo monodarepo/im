@@ -13,7 +13,7 @@ import {
   AUTONOMY_DESCRIPTION,
   AUTONOMY_LABEL,
   DECISION_STATE_LABEL,
-  DECISION_STATE_TOKEN,
+  DECISION_ACTION_LABEL,
   DECISION_STATE_TONE,
   DECISION_TRANSITIONS,
   EFFORT_LABEL,
@@ -237,7 +237,7 @@ function FullDetail({ record }: { record: DecisionRecord }) {
                   Mover estado
                 </p>
                 <p className="mt-1 text-delta text-neutral">
-                  Estado atual: {DECISION_STATE_TOKEN[state]}
+                  Estado atual: {DECISION_STATE_LABEL[state]}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {nextStates.length === 0 ? (
@@ -253,7 +253,7 @@ function FullDetail({ record }: { record: DecisionRecord }) {
                         className="rounded-control px-3 py-1.5 text-delta font-medium text-white transition-opacity hover:opacity-90"
                         style={{ backgroundColor: 'var(--product-accent)' }}
                       >
-                        {DECISION_STATE_LABEL[next]}
+                        {DECISION_ACTION_LABEL[next]}
                       </button>
                     ))
                   )}
@@ -355,7 +355,7 @@ function Attribute({
   return (
     <div className="rounded-card border border-surface-border bg-surface-card px-4 py-3">
       <p className="text-delta font-medium text-neutral">{label}</p>
-      <div className={`mt-1.5 ${emphasis ? 'text-kpi tabular-nums text-slate-900' : 'text-delta-lg text-slate-800'}`}>
+      <div className={`mt-1.5 ${emphasis ? 'font-mono text-kpi tabular-nums text-slate-900' : 'text-delta-lg text-slate-800'}`}>
         {value}
       </div>
     </div>
@@ -401,7 +401,7 @@ function MinimalDetail({
         title="Impacto estimado"
         description="Decisão criada nesta sessão, ainda sem registro completo"
       >
-        <p className="text-kpi tabular-nums text-slate-900">{formatMoney(impactBrl ?? 0)}</p>
+        <p className="font-mono text-kpi tabular-nums text-slate-900">{formatMoney(impactBrl ?? 0)}</p>
         <p className="mt-2 text-delta-lg text-neutral">
           Evidências, causa provável e trilha de auditoria são preenchidas quando a decisão é
           formalizada.

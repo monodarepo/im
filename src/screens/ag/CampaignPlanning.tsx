@@ -242,7 +242,7 @@ function DemandForecastChart() {
             />
             <Line
               {...CHART_LINE}
-              type="monotone"
+              type="linear"
               dataKey="previsto"
               name="Demanda prevista"
               stroke={FORECAST_COLOR}
@@ -251,7 +251,7 @@ function DemandForecastChart() {
             />
             <Line
               {...CHART_LINE}
-              type="monotone"
+              type="linear"
               dataKey="realizado"
               name="Entregue"
               stroke={ACTUAL_COLOR}

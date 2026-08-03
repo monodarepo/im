@@ -13,6 +13,8 @@ type DataBadgeProps = {
   attestation: Attestation
   /** `full` acrescenta a data de referência por extenso. */
   variant?: 'compact' | 'full'
+  /** Uma linha só, truncando a fonte — para rodapé de card de altura fixa. */
+  oneLine?: boolean
 }
 
 /**
@@ -22,17 +24,26 @@ type DataBadgeProps = {
  * atrasada, a defasagem vai para âmbar — o número segue na tela, apenas deixa
  * de se apresentar como fresco.
  */
-export function DataBadge({ attestation, variant = 'compact' }: DataBadgeProps) {
+export function DataBadge({ attestation, variant = 'compact', oneLine = false }: DataBadgeProps) {
   const stale = isStale(attestation)
   const age = ageInDays(attestation.asOf)
-  const sources = attestation.source.map((source) => SOURCE_LABEL[source]).join(' + ')
+  /** Duas fontes no rótulo; o resto vira "+N" com a lista completa no tooltip. */
+  const names = attestation.source.map((source) => SOURCE_LABEL[source])
+  const sources =
+    names.length > 2 ? `${names.slice(0, 2).join(' + ')} +${names.length - 2}` : names.join(' + ')
 
   return (
     <span
-      className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-delta text-neutral"
+      className={`text-delta text-neutral ${
+        oneLine
+          ? 'flex min-w-0 flex-nowrap items-center gap-x-2 overflow-hidden whitespace-nowrap'
+          : 'inline-flex flex-wrap items-center gap-x-2 gap-y-1'
+      }`}
       title={`${describeAttestation(attestation)} · ${QUALITY_LABEL[attestation.quality]} · referência ${formatDate(attestation.asOf)}`}
     >
-      <span className="font-medium text-slate-600">{sources}</span>
+      <span className={`font-medium text-slate-600 ${oneLine ? 'min-w-0 truncate' : ''}`}>
+        {sources}
+      </span>
 
       <span aria-hidden>·</span>
 

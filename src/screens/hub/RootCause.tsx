@@ -2,6 +2,7 @@ import { ThreadRibbon } from '../../components/ThreadRibbon'
 import { Link } from 'react-router-dom'
 import { DataBadge } from '../../components/DataBadge'
 import { Panel } from '../../components/Panel'
+import { ProductBadge } from '../../components/ProductBadge'
 import { StateChip } from '../../components/StateChip'
 import { WaterfallChart } from '../../components/WaterfallChart'
 import { CONFIDENCE_LABEL } from '../../domain/attestation'
@@ -38,12 +39,7 @@ function Decomposition() {
           <span className="min-w-0 flex-1 text-delta-lg text-slate-700">{factor.label}</span>
 
           {factor.owner ? (
-            <span
-              className="rounded-control px-2 py-0.5 text-delta font-medium text-white"
-              style={{ backgroundColor: PRODUCTS[factor.owner].accent }}
-            >
-              {PRODUCTS[factor.owner].shortName}
-            </span>
+            <ProductBadge product={factor.owner} />
           ) : (
             <span className="rounded-control bg-slate-100 px-2 py-0.5 text-delta text-neutral">
               Externo

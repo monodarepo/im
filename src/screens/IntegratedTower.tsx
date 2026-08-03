@@ -58,6 +58,9 @@ export function IntegratedTower() {
       </header>
 
       <section aria-label="Indicadores principais">
+        <p className="mb-2 text-micro uppercase text-neutral">
+          Indicadores principais · variação vs. 7 dias anteriores
+        </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {TOWER_PRIMARY_KPIS.map((kpi) => (
             <TowerKpiCard key={kpi.id} kpi={kpi} />
@@ -118,7 +121,7 @@ export function IntegratedTower() {
                   <ProductBadge product={alert.product} />
                 </div>
                 <p className="mt-1 text-delta-lg font-medium text-slate-900">{alert.headline}</p>
-                <p className="mt-1 text-kpi tabular-nums" style={{ color: SEMANTIC.negative }}>
+                <p className="mt-1 font-mono text-kpi tabular-nums" style={{ color: SEMANTIC.negative }}>
                   {formatMoney(alert.valueAtRiskBrl)}
                 </p>
                 <p className="mt-1 text-delta text-neutral">{alert.evidence}</p>
@@ -251,7 +254,7 @@ export function IntegratedTower() {
                   className="rounded-control border border-surface-border px-4 py-3"
                 >
                   <ProductBadge product={product} variant="full" />
-                  <p className="mt-2 text-kpi tabular-nums text-slate-900">{formatMoney(total)}</p>
+                  <p className="mt-2 font-mono text-kpi tabular-nums text-slate-900">{formatMoney(total)}</p>
                   <p className="mt-1 text-delta text-neutral">
                     em {formatInteger(decisions.length)}{' '}
                     {decisions.length === 1 ? 'decisão' : 'decisões'}
@@ -276,20 +279,15 @@ function TowerKpiCard({ kpi }: { kpi: TowerKpi }) {
 
   return (
     <Link to={kpi.route} className="block transition-opacity hover:opacity-90">
-      <div className="relative">
-        <span className="absolute right-4 top-4 z-10">
-          <ProductBadge product={kpi.product} />
-        </span>
-        <KpiCard
-          label={kpi.label}
-          value={value}
-          delta={kpi.delta}
-          deltaUnit={kpi.deltaUnit}
-          deltaInverted={kpi.inverted}
-          comparison={kpi.comparison}
-          attestation={kpi.attestation}
-        />
-      </div>
+      <KpiCard
+        label={kpi.label}
+        value={value}
+        delta={kpi.delta}
+        deltaUnit={kpi.deltaUnit}
+        deltaInverted={kpi.inverted}
+        attestation={kpi.attestation}
+        corner={<ProductBadge product={kpi.product} />}
+      />
     </Link>
   )
 }

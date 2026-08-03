@@ -314,6 +314,9 @@ export function ElasticitySimulator() {
                     isAnimationActive={false}
                   />
 
+                  {/* AUD-19, exceção deliberada: a curva de elasticidade é função
+                      contínua teórica (volume = f(preço)) — a suavização aqui é
+                      fidelidade ao modelo, não enfeite. */}
                   <Line
                     {...CHART_LINE}
                     type="monotone"

@@ -364,7 +364,7 @@ export function ScenarioSimulator() {
                       contentStyle={CHART_TOOLTIP_STYLE}
                       cursor={CHART_CURSOR}
                     />
-                    <Line {...CHART_LINE} type="monotone" dataKey="share" stroke={SHARE_COLOR} />
+                    <Line {...CHART_LINE} type="linear" dataKey="share" stroke={SHARE_COLOR} />
                   </LineChart>
                 )}
               </ResponsiveContainer>

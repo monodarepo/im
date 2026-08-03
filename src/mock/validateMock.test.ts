@@ -536,17 +536,17 @@ describe('formatação pt-BR', () => {
   })
 
   it('abrevia moeda por magnitude', () => {
-    expect(formatMoney(256_400_000)).toBe('R$ 256,4M')
-    expect(formatMoney(4_800_000)).toBe('R$ 4,8M')
-    expect(formatMoney(1_200_000_000)).toBe('R$ 1,2bi')
-    expect(formatMoney(256_400)).toBe('R$ 256,4 mil')
-    expect(formatMoney(640)).toBe('R$ 640')
+    expect(formatMoney(256_400_000)).toBe('R$ 256,4M')
+    expect(formatMoney(4_800_000)).toBe('R$ 4,8M')
+    expect(formatMoney(1_200_000_000)).toBe('R$ 1,2bi')
+    expect(formatMoney(256_400)).toBe('R$ 256,4 mil')
+    expect(formatMoney(640)).toBe('R$ 640')
   })
 
   it('mantém o valor cheio quando a tabela pede precisão', () => {
-    expect(formatMoneyFull(1_610_000)).toBe('R$ 1.610.000')
-    expect(formatMoneyDelta(-4_800_000)).toBe(`R$ ${MINUS}4,8M`)
-    expect(formatMoneyDelta(4_800_000)).toBe('R$ +4,8M')
+    expect(formatMoneyFull(1_610_000)).toBe('R$ 1.610.000')
+    expect(formatMoneyDelta(-4_800_000)).toBe(`R$ ${MINUS}4,8M`)
+    expect(formatMoneyDelta(4_800_000)).toBe('R$ +4,8M')
   })
 
   it('formata multiplicador', () => {
@@ -675,17 +675,18 @@ describe('roteamento e identidade de cor', () => {
     const hub = ROUTES.filter((route) => route.product === 'hub')
     expect(hub).toHaveLength(10)
 
-    expect(hub.map((route) => route.badge)).toEqual([
-      'HUB 1.1',
-      'HUB 1.2',
-      'HUB 1.3',
-      'HUB 1.4',
-      'HUB 1.5',
-      'HUB 1.6',
-      'HUB 1.7',
-      'HUB 1.8',
-      'HUB 1.9',
-      'HUB 1.10',
+    /** AUD-13: o código do módulo saiu da navegação; o teste fixa rota e título. */
+    expect(hub.map((route) => [route.path, route.title])).toEqual([
+      ['/hub', 'Visão Geral do Mercado'],
+      ['/hub/pulse', 'Market Pulse'],
+      ['/hub/produto/:skuId', 'Produto 360°'],
+      ['/hub/cliente', 'Cliente e Canal 360°'],
+      ['/hub/territorio', 'Território 360°'],
+      ['/hub/medico', 'Médico 360°'],
+      ['/hub/radar', 'Radar de Oportunidades'],
+      ['/hub/competitiva', 'Inteligência Competitiva'],
+      ['/hub/causa-raiz', 'Diagnóstico de Causa Raiz'],
+      ['/hub/qualidade', 'Qualidade dos Dados'],
     ])
 
     for (const route of hub) {
@@ -698,17 +699,17 @@ describe('roteamento e identidade de cor', () => {
     const rgm = ROUTES.filter((route) => route.product === 'rgm')
     expect(rgm).toHaveLength(10)
 
-    expect(rgm.map((route) => route.badge)).toEqual([
-      'RGM 3.1',
-      'RGM 3.2',
-      'RGM 3.3',
-      'RGM 3.4',
-      'RGM 3.5',
-      'RGM 3.6',
-      'RGM 3.7',
-      'RGM 3.8',
-      'RGM 3.9',
-      'RGM 3.10',
+    expect(rgm.map((route) => [route.path, route.title])).toEqual([
+      ['/rgm', 'Cockpit de Preço e Margem'],
+      ['/rgm/competitividade', 'Índice de Competitividade'],
+      ['/rgm/elasticidade', 'Simulador de Elasticidade'],
+      ['/rgm/cenarios', 'Simulador de Cenários'],
+      ['/rgm/gross-to-net', 'Gross-to-Net e Price Waterfall'],
+      ['/rgm/portfolio', 'Arquitetura de Portfólio'],
+      ['/rgm/governanca', 'Governança de Preços'],
+      ['/rgm/promocoes', 'Monitor de Promoções'],
+      ['/rgm/war-room', 'War Room de Genéricos'],
+      ['/rgm/relatorios', 'Relatórios'],
     ])
 
     for (const route of rgm) {
@@ -721,18 +722,18 @@ describe('roteamento e identidade de cor', () => {
     const gtm = ROUTES.filter((route) => route.product === 'gtm')
     expect(gtm).toHaveLength(11)
 
-    expect(gtm.map((route) => route.badge)).toEqual([
-      'GTM 2.1',
-      'GTM 2.2',
-      'GTM 2.3',
-      'GTM 2.4',
-      'GTM 2.5',
-      'GTM 2.6',
-      'GTM 2.7',
-      'GTM 2.8',
-      'GTM 2.9',
-      'GTM 2.10',
-      'GTM 2.11',
+    expect(gtm.map((route) => [route.path, route.title])).toEqual([
+      ['/gtm', 'Visão Geral do GTM'],
+      ['/gtm/planejamento', 'Planejamento GTM'],
+      ['/gtm/segmentacao', 'Segmentação e Targeting'],
+      ['/gtm/territorios', 'Territórios e Cobertura'],
+      ['/gtm/nba', 'Next Best Action'],
+      ['/gtm/roteirizacao', 'Roteirização Inteligente'],
+      ['/gtm/sortimento', 'Sortimento e Disponibilidade'],
+      ['/gtm/execucao', 'Execução Comercial'],
+      ['/gtm/metas', 'Metas e Quotas'],
+      ['/gtm/simulador-cobertura', 'Simulador de Cobertura'],
+      ['/gtm/relatorios', 'Relatórios'],
     ])
 
     for (const route of gtm) {
@@ -848,7 +849,7 @@ describe('números canônicos 10.1', () => {
 
   it('exibe cada valor exatamente como o ESCOPO fixa', () => {
     expect(MARKET_KPIS.map((item) => formatKpiValue(item))).toEqual([
-      'R$ 256,4M',
+      'R$ 256,4M',
       '18,7%',
       '76,2%',
       '7,3%',
@@ -889,11 +890,11 @@ describe('números canônicos 10.1', () => {
 
   it('ancora o centro do donut no sell-out do período', () => {
     expect(MIX_TOTAL_BRL).toBe(256_400_000)
-    expect(formatMoney(MIX_TOTAL_BRL)).toBe('R$ 256,4M')
+    expect(formatMoney(MIX_TOTAL_BRL)).toBe('R$ 256,4M')
   })
 
   it('traz os três diagnósticos rápidos', () => {
-    expect(DIAGNOSTICS.map((d) => d.reading)).toEqual(['Preço e distribuição', 'R$ 2,1M', '−1,3 pp'])
+    expect(DIAGNOSTICS.map((d) => d.reading)).toEqual(['Preço e distribuição', 'R$ 2,1M', '−1,3 pp'])
   })
 })
 
@@ -931,11 +932,11 @@ describe('números canônicos 10.2', () => {
     expect(
       OPPORTUNITIES.map((o) => [o.rank, o.title, formatMoney(o.impactBrl), o.decisionId]),
     ).toEqual([
-      [1, 'Recuperar distribuição de Losartana em SP', 'R$ 4,8M', 'D-2026-0001'],
-      [2, 'Revisar preço de Dipirona em MG', 'R$ 3,2M', 'D-2026-0002'],
-      [3, 'Aumentar cobertura de médicos, Cardiologia RJ', 'R$ 2,7M', 'D-2026-0003'],
-      [4, 'Redistribuir amostras, Região Sul', 'R$ 1,9M', 'D-2026-0004'],
-      [5, 'Reduzir ruptura de Paracetamol no NE', 'R$ 1,6M', 'D-2026-0005'],
+      [1, 'Recuperar distribuição de Losartana em SP', 'R$ 4,8M', 'D-2026-0001'],
+      [2, 'Revisar preço de Dipirona em MG', 'R$ 3,2M', 'D-2026-0002'],
+      [3, 'Aumentar cobertura de médicos, Cardiologia RJ', 'R$ 2,7M', 'D-2026-0003'],
+      [4, 'Redistribuir amostras, Região Sul', 'R$ 1,9M', 'D-2026-0004'],
+      [5, 'Reduzir ruptura de Paracetamol no NE', 'R$ 1,6M', 'D-2026-0005'],
     ])
   })
 
@@ -1036,7 +1037,7 @@ describe('Produto 360°', () => {
     const metrics = acao?.metrics ?? []
     expect(metrics.find((m) => m.id === 'open-recommendations')?.value).toBe(1)
     expect(metrics.find((m) => m.id === 'potential-impact')?.value).toBe(4_800_000)
-    expect(formatMetric(metrics[1] as ProductMetric)).toBe('R$ 4,8M')
+    expect(formatMetric(metrics[1] as ProductMetric)).toBe('R$ 4,8M')
   })
 
   it('mostra travessão onde o valor ainda não veio do ESCOPO', () => {
@@ -1405,10 +1406,10 @@ describe('P5 — simulador de cenários (10.3)', () => {
       1_250_000, 1_340_000, 1_520_000, 1_610_000,
     ])
     expect(rows.map((o) => formatMoney(o.sellOutBrl))).toEqual([
-      'R$ 16,1M',
-      'R$ 16,6M',
-      'R$ 18,1M',
-      'R$ 19,6M',
+      'R$ 16,1M',
+      'R$ 16,6M',
+      'R$ 18,1M',
+      'R$ 19,6M',
     ])
     expect(rows.map((o) => formatPercent(o.sharePercent))).toEqual([
       '18,7%',
@@ -1417,16 +1418,16 @@ describe('P5 — simulador de cenários (10.3)', () => {
       '21,9%',
     ])
     expect(rows.map((o) => formatMoney(o.netRevenueBrl))).toEqual([
-      'R$ 16,1M',
-      'R$ 16,6M',
-      'R$ 17,2M',
-      'R$ 18,0M',
+      'R$ 16,1M',
+      'R$ 16,6M',
+      'R$ 17,2M',
+      'R$ 18,0M',
     ])
     expect(rows.map((o) => formatMoney(o.contributionBrl, 2))).toEqual([
-      'R$ 7,31M',
-      'R$ 7,55M',
-      'R$ 7,82M',
-      'R$ 8,19M',
+      'R$ 7,31M',
+      'R$ 7,55M',
+      'R$ 7,82M',
+      'R$ 8,19M',
     ])
     expect(rows.map((o) => o.promoRoiPercent)).toEqual([null, 15.2, 22.8, 25.6])
   })
@@ -1466,7 +1467,7 @@ describe('P5 — simulador de cenários (10.3)', () => {
   })
 
   it('deriva o impacto do recomendado das próprias linhas canônicas', () => {
-    expect(formatMoneyDelta(RECOMMENDED_IMPACT.netRevenueBrl)).toBe('R$ +1,9M')
+    expect(formatMoneyDelta(RECOMMENDED_IMPACT.netRevenueBrl)).toBe('R$ +1,9M')
     expect(formatPointsDelta(RECOMMENDED_IMPACT.sharePoints)).toBe('+3,2 pp')
     expect(formatPercentDelta(RECOMMENDED_IMPACT.contributionPercent)).toBe('+12,0%')
   })
@@ -1503,7 +1504,7 @@ describe('objeto Decisão (8.1)', () => {
     expect(transition('proposed', 'in_approval')).toBe('in_approval')
   })
 
-  it('enviar para aprovação move D-2026-0001 e anexa a parcela de R$ 1,9M', () => {
+  it('enviar para aprovação move D-2026-0001 e anexa a parcela de R$ 1,9M', () => {
     const workflow = useDecisionWorkflow.getState()
     /** O registro da 8.1 já abre em aprovação; o store parte dele desde P12. */
     expect(workflow.stateOf(APPROVAL_DECISION_ID)).toBe('in_approval')
@@ -1523,7 +1524,7 @@ describe('objeto Decisão (8.1)', () => {
     const parcels = after.parcelsOf(APPROVAL_DECISION_ID)
     expect(parcels).toHaveLength(1)
     expect(parcels[0]?.source).toBe('rgm')
-    expect(formatMoney(parcelTotal(parcels))).toBe('R$ 1,9M')
+    expect(formatMoney(parcelTotal(parcels))).toBe('R$ 1,9M')
     expect(parcels[0]?.createdOn).toBe(HOJE)
   })
 
@@ -1751,7 +1752,7 @@ describe('P7 — GTM Next Best Action e roteirização', () => {
     expect(porId['productive-visits']).toMatchObject({ value: 68, target: 75 })
     expect(porId.conversion).toMatchObject({ value: 23, target: 25 })
     expect(porId['incremental-sellout']).toMatchObject({ value: 1_200_000, delta: 15 })
-    expect(formatMoney(1_200_000)).toBe('R$ 1,2M')
+    expect(formatMoney(1_200_000)).toBe('R$ 1,2M')
   })
 
   it('lista as quatro próximas ações sugeridas', () => {
@@ -2016,17 +2017,17 @@ describe('P9 — AG Otimizador de Alocação (10.5)', () => {
     const ag = ROUTES.filter((route) => route.product === 'ag')
     expect(ag).toHaveLength(10)
 
-    expect(ag.map((route) => route.badge)).toEqual([
-      'AG 4.1',
-      'AG 4.2',
-      'AG 4.3',
-      'AG 4.4',
-      'AG 4.5',
-      'AG 4.6',
-      'AG 4.7',
-      'AG 4.8',
-      'AG 4.9',
-      'AG 4.10',
+    expect(ag.map((route) => [route.path, route.title])).toEqual([
+      ['/ag', 'Visão Geral do AG'],
+      ['/ag/campanhas', 'Planejamento de Campanhas'],
+      ['/ag/segmentacao', 'Segmentação de Médicos'],
+      ['/ag/otimizador', 'Otimizador de Alocação'],
+      ['/ag/estoque', 'Estoque e Logística'],
+      ['/ag/campo', 'Execução em Campo'],
+      ['/ag/conversao-roi', 'Conversão e ROI'],
+      ['/ag/redistribuicao', 'Redistribuição Inteligente'],
+      ['/ag/compliance', 'Compliance e Rastreabilidade'],
+      ['/ag/relatorios', 'Relatórios'],
     ])
 
     for (const route of ag) {
@@ -2370,7 +2371,7 @@ describe('P10 — cobertura de telas construídas', () => {
   })
 })
 
-describe('P11 — objeto Decisão e a decomposição de R$ 4,8M', () => {
+describe('P11 — objeto Decisão e a decomposição de R$ 4,8M', () => {
   it('fecha a soma das parcelas contra o impacto de cada decisão', () => {
     for (const record of DECISION_RECORDS) {
       expect(parcelsReconcile(record)).toBe(true)
@@ -2507,7 +2508,7 @@ describe('P11 — Torre Integrada', () => {
     expect(funnelOf('gross_revenue')[0]?.value).toBe(TOTAL_DECISION_IMPACT_BRL)
   })
 
-  it('prioriza o briefing por R$ em risco e leva a rotas existentes', () => {
+  it('prioriza o briefing por R$ em risco e leva a rotas existentes', () => {
     expect(DAILY_BRIEFING.length).toBeGreaterThanOrEqual(3)
     expect(DAILY_BRIEFING.length).toBeLessThanOrEqual(5)
 

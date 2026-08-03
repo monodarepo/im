@@ -211,7 +211,7 @@ function ReliabilityChart() {
               <Line
                 {...CHART_LINE}
                 key={source.key}
-                type="monotone"
+                type="linear"
                 dataKey={source.key}
                 name={source.label}
                 stroke={RELIABILITY_COLORS[source.key]}

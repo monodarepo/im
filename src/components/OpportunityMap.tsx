@@ -16,10 +16,9 @@ import { useFilters } from '../state/filtersStore'
 
 type Granularity = 'estado' | 'municipio' | 'territorio'
 
-const GRANULARITIES: readonly { id: Granularity; label: string; phase?: string }[] = [
+/** AUD-29: só o nível disponível é tab; os níveis de fase futura viram nota. */
+const GRANULARITIES: readonly { id: Granularity; label: string }[] = [
   { id: 'estado', label: 'Estado' },
-  { id: 'municipio', label: 'Município', phase: 'Fase 2' },
-  { id: 'territorio', label: 'Território', phase: 'Fase 2' },
 ]
 
 const ZOOM_STEP = 0.25
@@ -56,21 +55,15 @@ export function OpportunityMap() {
         >
           {GRANULARITIES.map((option) => {
             const isActive = option.id === granularity
-            const isDisabled = option.phase !== undefined
             return (
               <button
                 key={option.id}
                 type="button"
-                disabled={isDisabled}
                 onClick={() => setGranularity(option.id)}
-                title={isDisabled ? `${option.label} — ${option.phase}` : option.label}
-                className={`rounded-control px-3 py-1 text-delta font-medium transition-colors ${
-                  isDisabled ? 'cursor-not-allowed text-slate-300' : 'text-slate-600 hover:bg-slate-50'
-                }`}
+                className="rounded-control px-3 py-1 text-delta font-medium text-slate-600 transition-colors hover:bg-slate-50"
                 style={isActive ? { backgroundColor: 'var(--product-accent)', color: '#FFFFFF' } : undefined}
               >
                 {option.label}
-                {option.phase ? <span className="ml-1 text-[10px]">{option.phase}</span> : null}
               </button>
             )
           })}
@@ -161,6 +154,7 @@ export function OpportunityMap() {
 
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
         <span className="text-delta font-medium text-slate-700">Oportunidade (impacto R$)</span>
+        <span className="text-delta text-neutral">drill municipal e por território — Fase 2</span>
         <span className="inline-flex items-center gap-1">
           <span className="text-delta text-neutral">menor</span>
           {OPPORTUNITY_LEVELS.map((level) => (

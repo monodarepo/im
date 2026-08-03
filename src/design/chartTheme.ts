@@ -6,6 +6,7 @@
  * `<CartesianGrid {...CHART_GRID} />`, `<XAxis {...CHART_AXIS} />`. A regra
  * vive num lugar; a tela só consome.
  */
+import { createElement } from 'react'
 import type { CSSProperties } from 'react'
 
 /** Grade: horizontal apenas, hairline pontilhado. */
@@ -23,12 +24,47 @@ export const CHART_AXIS = {
   tickMargin: 8,
 } as const
 
-/** Linha: 2px, sem ponto por vértice — ponto só no hover (activeDot). */
+/** Linha: 2px, sem ponto por vértice — ponto no último valor e no hover. */
 export const CHART_LINE = {
   strokeWidth: 2,
   dot: false,
   activeDot: { r: 3.5, strokeWidth: 0 },
 } as const
+
+type DotProps = { cx?: number; cy?: number; index?: number }
+
+/**
+ * Ponto de término da série (a promessa deste tema, cumprida): marca onde a
+ * linha acaba, para o fim da série não parecer dado faltando. Quando
+ * `lastIndex` fica antes do fim do eixo, acrescenta o rótulo "parcial".
+ */
+export function endpointDot(color: string, lastIndex: number, options?: { partial?: boolean }) {
+  const render = (props: DotProps) => {
+    if (props.index !== lastIndex || props.cx === undefined || props.cy === undefined) {
+      return createElement('g', { key: `pt-${props.index ?? 'x'}` })
+    }
+    const children = [
+      createElement('circle', { key: 'dot', cx: props.cx, cy: props.cy, r: 3.5, fill: color }),
+    ]
+    if (options?.partial) {
+      children.push(
+        createElement(
+          'text',
+          {
+            key: 'label',
+            x: props.cx + 8,
+            y: props.cy + 4,
+            fontSize: 11,
+            fill: '#64748B',
+          },
+          'parcial',
+        ),
+      )
+    }
+    return createElement('g', { key: `pt-${props.index}` }, children)
+  }
+  return render
+}
 
 /** Área: preenchimento sólido de baixa opacidade. Nunca gradiente. */
 export const CHART_AREA = {

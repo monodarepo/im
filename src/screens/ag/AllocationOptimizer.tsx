@@ -6,6 +6,7 @@ import { CHART_TOOLTIP_STYLE } from '../../design/chartTheme'
 import { DataBadge } from '../../components/DataBadge'
 import { FutureButton } from '../../components/FutureButton'
 import { KpiCard } from '../../components/KpiCard'
+import { AiChip } from '../../components/AiChip'
 import { Panel } from '../../components/Panel'
 import { StateChip } from '../../components/StateChip'
 import { DECISION_STATE_LABEL, DECISION_STATE_TONE } from '../../domain/decision'
@@ -116,7 +117,11 @@ function DoctorTable() {
             <th className="pb-2 text-right font-medium">Prescrição (unid./mês)</th>
             <th className="pb-2 text-right font-medium">Freq. visita (dias)</th>
             <th className="pb-2 text-right font-medium">Amostras entregues</th>
-            <th className="pb-2 text-right font-medium">Recomendação IA</th>
+            <th className="pb-2 text-right font-medium">
+              <span className="inline-flex items-center gap-1.5">
+                Recomendação <AiChip />
+              </span>
+            </th>
             <th className="pb-2 text-right font-medium">Conversão est. (unid.)</th>
           </tr>
         </thead>
@@ -147,10 +152,7 @@ function DoctorTable() {
                   {formatInteger(allocation.samplesDelivered)}
                 </td>
                 <td className="py-2.5 text-right">
-                  <span
-                    className="inline-block rounded-control px-2.5 py-1 text-delta-lg font-semibold tabular-nums text-white"
-                    style={{ backgroundColor: 'var(--product-accent)' }}
-                  >
+                  <span className="inline-block rounded-control bg-slate-100 px-2.5 py-1 text-delta-lg font-semibold tabular-nums text-slate-900">
                     {formatInteger(allocation.recommendedSamples)}
                   </span>
                 </td>
@@ -175,7 +177,11 @@ function RegionTable() {
             <th className="pb-2 font-medium">Região</th>
             <th className="pb-2 text-right font-medium">Médicos-alvo</th>
             <th className="pb-2 text-right font-medium">Estoque disponível</th>
-            <th className="pb-2 text-right font-medium">Recomendação IA</th>
+            <th className="pb-2 text-right font-medium">
+              <span className="inline-flex items-center gap-1.5">
+                Recomendação <AiChip />
+              </span>
+            </th>
             <th className="pb-2 text-right font-medium">Cobertura</th>
             <th className="pb-2 text-right font-medium">ROI estimado</th>
           </tr>

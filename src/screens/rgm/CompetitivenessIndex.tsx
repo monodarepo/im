@@ -300,7 +300,7 @@ function IndexEvolutionChart() {
           <Tooltip content={<IndexTooltip />} cursor={CHART_CURSOR} />
           <Line
             {...CHART_LINE}
-            type="monotone"
+            type="linear"
             dataKey="indice"
             name="Índice de competitividade"
             stroke={SERIES_COLOR}

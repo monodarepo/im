@@ -11,17 +11,16 @@ import {
 } from '../routes/registry'
 import { ProductSwitcher } from './ProductSwitcher'
 
-function ModuleLink({ to, title, badge }: { to: string; title: string; badge: string }) {
+function ModuleLink({ to, title }: { to: string; title: string }) {
   return (
     <NavLink
       to={to}
-      className="flex items-center justify-between gap-2 rounded-control px-3 py-2 text-delta-lg transition-colors"
+      className="block rounded-control px-3 py-2 text-delta-lg transition-colors"
       style={({ isActive }) =>
         isActive ? { backgroundColor: 'var(--product-accent)', color: '#FFFFFF' } : { color: '#CBD5E1' }
       }
     >
-      <span>{title}</span>
-      <span className="shrink-0 text-delta opacity-70">{badge}</span>
+      {title}
     </NavLink>
   )
 }
@@ -61,12 +60,7 @@ export function Sidebar() {
           </NavLink>
         ) : null}
         {modules.map((route) => (
-          <ModuleLink
-            key={route.path}
-            to={route.navPath ?? route.path}
-            title={route.title}
-            badge={route.badge}
-          />
+          <ModuleLink key={route.path} to={route.navPath ?? route.path} title={route.title} />
         ))}
       </nav>
 
